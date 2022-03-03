@@ -31,15 +31,6 @@ def setup_training(self):
     # (s, a, r, s')
     self.transitions = deque(maxlen=TRANSITION_HISTORY_SIZE)
 
-    # State: (-x-y, -x0y, -x+y, 0x-y, 0x-0y, 0x+y, +x-y, +x0y, +x+y) * 3 for next to blocks left/right/not -> 27
-    # Actions: 'UP', 'RIGHT', 'DOWN', 'LEFT' -> 4
-
-    try:
-        with open("my-saved-model.pt", "rb") as file:
-            self.Q = pickle.load(file)
-    except (EOFError, FileNotFoundError):
-        self.Q = np.random.rand(9, 3, 3, 3, 4) * 3
-
     self.alpha = 0.2
     self.gamma = 0.5
 
@@ -66,6 +57,9 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     if old_game_state is None:
         self.transitions.append(
             Transition(state_to_features(old_game_state), self_action, state_to_features(new_game_state), 0))
+        return
+
+    if len(np.array(new_game_state["coins"])) == 0:
         return
 
     reward = calculate_reward(events, old_game_state, new_game_state)
@@ -97,7 +91,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     # self.transitions.append(Transition(state_to_features(last_game_state), last_action, None, calculate_reward(events)))
 
     # Store the model
-    with open("my-saved-model.pt", "wb") as file:
+    with open("model.pt", "wb") as file:
         pickle.dump(self.Q, file)
 
     # plt.gray()
@@ -116,12 +110,12 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         if event in game_rewards:
             reward_sum += game_rewards[event]
 
-    previous_nearest_coin_dist_x, previous_nearest_coin_dist_y = state_to_features(old_game_state)
-    nearest_coin_dist_x, nearest_coin_dist_y = state_to_features(new_game_state)
-
-    if nearest_coin_dist_x < previous_nearest_coin_dist_x or nearest_coin_dist_y < previous_nearest_coin_dist_y:
-        reward_sum += 3
-    else:
-        reward_sum -= 1
+    # previous_nearest_coin_dist_x, previous_nearest_coin_dist_y = state_to_features(old_game_state)
+    # nearest_coin_dist_x, nearest_coin_dist_y = state_to_features(new_game_state)
+    #
+    # if nearest_coin_dist_x < previous_nearest_coin_dist_x or nearest_coin_dist_y < previous_nearest_coin_dist_y:
+    #     reward_sum += 3
+    # else:
+    #     reward_sum -= 1
 
     return reward_sum

@@ -1,4 +1,3 @@
-import os
 import pickle
 import random
 
@@ -28,16 +27,13 @@ def setup(self):
     :param self: This object is passed to all callbacks and you can set arbitrary values.
     """
 
-    self.last_nearest_coin_dist = -1
-
-    if self.train or not os.path.isfile("my-saved-model.pt"):
-        self.logger.info("Setting up model from scratch.")
-        weights = np.random.rand(len(ACTIONS))
-        self.model = weights / weights.sum()
-    else:
-        self.logger.info("Loading model from saved state.")
-        with open("my-saved-model.pt", "rb") as file:
-            self.model = pickle.load(file)
+    try:
+        with open("model.pt", "rb") as file:
+            self.Q = pickle.load(file)
+            print("Loaded")
+    except (EOFError, FileNotFoundError):
+        # self.Q = np.random.rand(9, 3, 3, 3, 4) * 3
+        self.Q = np.ones((9, 3, 3, 3, 4)) * 3
 
 
 def act(self, game_state: dict) -> str:
@@ -49,7 +45,9 @@ def act(self, game_state: dict) -> str:
     :param game_state: The dictionary that describes everything on the board.
     :return: The action to take as a string.
     """
-    random_prob = .25
+    current_round = game_state["round"]
+
+    random_prob = .25**(1 + current_round / 8)
     if self.train and random.random() < random_prob:
         self.logger.debug("Choosing action purely at random.")
         return np.random.choice(MOVE_ACTIONS)
@@ -65,6 +63,9 @@ def state_to_features(game_state: dict) -> np.array:
 
     our_position = np.array(game_state["self"][3])
     coin_positions = np.array(game_state["coins"])
+
+    if len(coin_positions) == 0:
+        return None
 
     coin_dists = [cityblock(our_position, x) for x in coin_positions]
     # nearest_coin_dist = np.min(coin_dists)
