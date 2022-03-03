@@ -105,12 +105,12 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         if event in game_rewards:
             reward_sum += game_rewards[event]
 
-    # previous_nearest_coin_dist_x, previous_nearest_coin_dist_y = state_to_features(old_game_state)
-    # nearest_coin_dist_x, nearest_coin_dist_y = state_to_features(new_game_state)
-    #
-    # if nearest_coin_dist_x < previous_nearest_coin_dist_x or nearest_coin_dist_y < previous_nearest_coin_dist_y:
-    #     reward_sum += 3
-    # else:
-    #     reward_sum -= 1
+    previous_min_dist = np.min(get_steps_between(np.array(old_game_state["self"][3]), np.array(old_game_state["coins"])))
+    current_min_dist = np.min(get_steps_between(np.array(new_game_state["self"][3]), np.array(new_game_state["coins"])))
+
+    if current_min_dist < previous_min_dist:
+        reward_sum += 3
+    else:
+        reward_sum -= 1
 
     return reward_sum
