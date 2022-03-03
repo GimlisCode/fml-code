@@ -140,7 +140,12 @@ def get_idx_for_state(game_state: dict):
         # no blocks
         block_idx = 2
 
-    nearest_coin_dist_x, nearest_coin_dist_y = state_to_features(game_state)
+    distances = state_to_features(game_state)
+
+    if distances is None:
+        return edge_idx, block_idx, 0, 0
+
+    nearest_coin_dist_x, nearest_coin_dist_y = distances
 
     if nearest_coin_dist_x > 0:
         dist_x_idx = 0
