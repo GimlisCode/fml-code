@@ -68,6 +68,9 @@ def get_steps_between(agent_position, object_positions):
 
     obj_dists_cityblock += blocks_vertical * 2 * same_column + blocks_horizontal * 2 * same_row
 
+    same_position = agent_position == object_positions
+    obj_dists_cityblock[np.logical_and(same_position[:, 0], same_position[:, 1])] = 0
+
     return obj_dists_cityblock
 
 
