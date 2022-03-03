@@ -55,8 +55,6 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     self.logger.debug(f'Encountered game event(s) {", ".join(map(repr, events))} in step {new_game_state["step"]}')
 
     if old_game_state is None:
-        self.transitions.append(
-            Transition(state_to_features(old_game_state), self_action, state_to_features(new_game_state), 0))
         return
 
     if len(np.array(new_game_state["coins"])) == 0:
@@ -69,9 +67,6 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     action_idx_t = get_idx_for_action(self_action)
 
     self.Q[state_idx_w_t, state_idx_x_t, state_idx_y_t, state_idx_z_t, action_idx_t] += self.alpha * (reward + self.gamma * np.max(self.Q[state_idx_w_t1, state_idx_x_t1, state_idx_y_t1, state_idx_z_t1]) - self.Q[state_idx_w_t, state_idx_x_t, state_idx_y_t, state_idx_z_t, action_idx_t])
-
-    # state_to_features is defined in callbacks.py
-    self.transitions.append(Transition(state_to_features(old_game_state), self_action, state_to_features(new_game_state), calculate_reward(events, old_game_state, new_game_state)))
 
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):

@@ -56,6 +56,21 @@ def act(self, game_state: dict) -> str:
     return MOVE_ACTIONS[np.argmax(self.Q[get_idx_for_state(game_state)])]
 
 
+def get_steps_between(agent_position, object_positions):
+    obj_dists_cityblock = [cityblock(agent_position, x) for x in object_positions]
+    obj_dist_x_y = object_positions - agent_position
+
+    blocks_vertical = agent_position[0] % 2 == 0
+    blocks_horizontal = agent_position[1] % 2 == 0
+
+    same_column = obj_dist_x_y[:, 0] == 0
+    same_row = obj_dist_x_y[:, 1] == 0
+
+    obj_dists_cityblock += blocks_vertical * 2 * same_column + blocks_horizontal * 2 * same_row
+
+    return obj_dists_cityblock
+
+
 def state_to_features(game_state: dict) -> np.array:
     # This is the dict before the game begins and after it ends
     if game_state is None:
@@ -67,8 +82,9 @@ def state_to_features(game_state: dict) -> np.array:
     if len(coin_positions) == 0:
         return None
 
-    coin_dists = [cityblock(our_position, x) for x in coin_positions]
-    # nearest_coin_dist = np.min(coin_dists)
+    # coin_dists = [cityblock(our_position, x) for x in coin_positions]
+    coin_dists = get_steps_between(our_position, coin_positions)
+
     nearest_coin_dist_x, nearest_coin_dist_y = coin_positions[np.argmin(coin_dists)] - our_position
 
     return nearest_coin_dist_x, nearest_coin_dist_y
