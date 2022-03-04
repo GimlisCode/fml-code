@@ -32,7 +32,7 @@ def setup(self):
             print("Loaded")
     except (EOFError, FileNotFoundError):
         # self.Q = np.random.rand(9, 3, 3, 3, 4) * 3
-        self.Q = np.ones((9, 3, 4, 4, 6)) * 3
+        self.Q = np.ones((9, 3, 4, 4, 4, 4, 4, 4, 6)) * 3
 
 
 def act(self, game_state: dict) -> str:
@@ -45,8 +45,6 @@ def act(self, game_state: dict) -> str:
     :return: The action to take as a string.
     """
     current_round = game_state["round"]
-
-    near_bomb(np.array(game_state["self"][3]), np.array(game_state["coins"]))
 
     random_prob = max(.5**(1 + current_round / 15), 0.01)
     if self.train and random.random() < random_prob:
@@ -78,7 +76,7 @@ def get_steps_between(agent_position, object_positions) -> np.ndarray:
     return obj_dists_cityblock
 
 
-def state_to_features(game_state: dict) -> np.array:
+def get_nearest_coin_dist(game_state: dict) -> np.array:
     # This is the dict before the game begins and after it ends
     if game_state is None:
         return None
@@ -97,14 +95,24 @@ def state_to_features(game_state: dict) -> np.array:
     return nearest_coin_dist_x, nearest_coin_dist_y
 
 
-def near_bomb(agent_position, bomb_positions):
-    if len(bomb_positions) == 0:
+def get_k_nearest_object_positions(agent_position, object_positions, k=1) -> list:
+    if len(object_positions) == 0:
+        return [None] * k
+
+    k_orig = k
+    k = min(k, len(object_positions))
+
+    return object_positions[np.argpartition(get_steps_between(agent_position, object_positions), kth=k-1)[:k]].tolist() + [None] * (k_orig - k)
+
+
+def objects_in_bomb_dist(agent_position, obj_positions, dist=3):
+    if len(obj_positions) == 0:
         return []
 
-    steps = get_steps_between(agent_position, bomb_positions)
-    relevant_distances = steps <= 3
+    steps = get_steps_between(agent_position, obj_positions)
+    relevant_distances = steps <= dist
 
-    air_dist = np.abs(bomb_positions - agent_position)[relevant_distances]
+    air_dist = np.abs(obj_positions - agent_position)[relevant_distances]
     steps = steps[relevant_distances]
 
     dist_x = air_dist[:, 0]
@@ -112,15 +120,35 @@ def near_bomb(agent_position, bomb_positions):
 
     dangerous_bombs = np.logical_or(dist_x == steps, dist_y == steps)
 
-    return bomb_positions[relevant_distances][dangerous_bombs]
+    return obj_positions[relevant_distances][dangerous_bombs]
+
+
+def get_k_nearest_bombs(agent_position, bomb_positions, k) -> list:
+    dangerous_bombs = objects_in_bomb_dist(agent_position, bomb_positions, dist=3)
+
+    if len(dangerous_bombs) == 0:
+        return [None] * k
+
+    k_orig = k
+    k = min(k, len(dangerous_bombs))
+
+    return dangerous_bombs[np.argpartition(get_steps_between(agent_position, dangerous_bombs), kth=k-1)[:k]].tolist() + [None] * (k_orig - k)
 
 
 def get_idx_for_action(action):
     return ACTIONS.index(action)
 
 
+def extract_crate_positions(field):
+    return np.argwhere(field == 1)
+
+
 def get_idx_for_state(game_state: dict):
+    # number_of_near_bombs?
+    # number_of_near_crates?
     our_position = game_state["self"][3]
+    crate_positions = extract_crate_positions(game_state["field"])
+    bomb_positions = np.array([coords for coords, _ in game_state["bombs"]])
 
     MAX_X = COLS - 2
     MAX_Y = ROWS - 2
@@ -162,26 +190,42 @@ def get_idx_for_state(game_state: dict):
         # no blocks
         block_idx = 2
 
-    distances = state_to_features(game_state)
+    coin_dist_x_idx, coin_dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))
 
+    nearest_crates = get_k_nearest_object_positions(our_position, crate_positions, k=1)
+
+    crate_indices = list()
+    for crate_dist in nearest_crates:
+        crate_indices.append(get_distance_indices(crate_dist))
+
+    nearest_bombs = get_k_nearest_bombs(our_position, bomb_positions, k=1)
+
+    bomb_indices = list()
+    for bomb_dist in nearest_bombs:
+        bomb_indices.append(get_distance_indices(bomb_dist))
+
+    return edge_idx, block_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0]
+
+
+def get_distance_indices(distances):
     if distances is None:
         dist_x_idx = 3
         dist_y_idx = 3
     else:
-        nearest_coin_dist_x, nearest_coin_dist_y = distances
+        dist_x, dist_y = distances
 
-        if nearest_coin_dist_x > 0:
+        if dist_x > 0:
             dist_x_idx = 0
-        elif nearest_coin_dist_x < 0:
+        elif dist_x < 0:
             dist_x_idx = 1
         else:
             dist_x_idx = 2
 
-        if nearest_coin_dist_y > 0:
+        if dist_y > 0:
             dist_y_idx = 0
-        elif nearest_coin_dist_y < 0:
+        elif dist_y < 0:
             dist_y_idx = 1
         else:
             dist_y_idx = 2
 
-    return edge_idx, block_idx, dist_x_idx, dist_y_idx
+    return dist_x_idx, dist_y_idx

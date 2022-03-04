@@ -57,16 +57,13 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     if old_game_state is None:
         return
 
-    if len(np.array(new_game_state["coins"])) == 0:
-        return
-
     reward = calculate_reward(events, old_game_state, new_game_state)
 
-    state_idx_w_t, state_idx_x_t, state_idx_y_t, state_idx_z_t = get_idx_for_state(old_game_state)
-    state_idx_w_t1, state_idx_x_t1, state_idx_y_t1, state_idx_z_t1 = get_idx_for_state(new_game_state)
+    idx_t = get_idx_for_state(old_game_state)
+    idx_t1 = get_idx_for_state(new_game_state)
     action_idx_t = get_idx_for_action(self_action)
 
-    self.Q[state_idx_w_t, state_idx_x_t, state_idx_y_t, state_idx_z_t, action_idx_t] += self.alpha * (reward + self.gamma * np.max(self.Q[state_idx_w_t1, state_idx_x_t1, state_idx_y_t1, state_idx_z_t1]) - self.Q[state_idx_w_t, state_idx_x_t, state_idx_y_t, state_idx_z_t, action_idx_t])
+    self.Q[idx_t][action_idx_t] += self.alpha * (reward + self.gamma * np.max(self.Q[idx_t1]) - self.Q[idx_t][action_idx_t])
 
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
@@ -100,7 +97,7 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         e.COIN_COLLECTED: 5,
         e.INVALID_ACTION: -10,
         e.KILLED_SELF: -20,
-        e.CRATE_DESTROYED: 2
+        e.CRATE_DESTROYED: 10
 
     }
     reward_sum = 0
@@ -111,21 +108,26 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     previous_agent_position = np.array(old_game_state["self"][3])
     current_agent_position = np.array(new_game_state["self"][3])
 
-    previous_min_dist = np.min(get_steps_between(previous_agent_position, np.array(old_game_state["coins"])))
-    current_min_dist = np.min(get_steps_between(current_agent_position, np.array(new_game_state["coins"])))
+    if len(old_game_state["coins"]) > 0 and len(new_game_state["coins"]) > 0:
+        previous_min_dist = np.min(get_steps_between(previous_agent_position, np.array(old_game_state["coins"])))
+        current_min_dist = np.min(get_steps_between(current_agent_position, np.array(new_game_state["coins"])))
 
-    if current_min_dist < previous_min_dist:
-        reward_sum += 3
-    else:
-        reward_sum -= 5
+        if current_min_dist < previous_min_dist:
+            reward_sum += 3
+        elif current_min_dist == previous_min_dist:
+            pass
+        else:
+            reward_sum -= 5
 
     previous_bomb_positions = np.array([coords for coords, _ in old_game_state["bombs"]])
     current_bomb_positions = np.array([coords for coords, _ in new_game_state["bombs"]])
 
-    previous_near_bombs = near_bomb(previous_agent_position, previous_bomb_positions)
-    current_near_bombs = near_bomb(current_agent_position, current_bomb_positions)
+    previous_near_bombs = objects_in_bomb_dist(previous_agent_position, previous_bomb_positions)
+    current_near_bombs = objects_in_bomb_dist(current_agent_position, current_bomb_positions)
 
     if len(previous_near_bombs) <= len(current_near_bombs):
         reward_sum -= 5
+    else:
+        reward_sum += 2
 
     return reward_sum
