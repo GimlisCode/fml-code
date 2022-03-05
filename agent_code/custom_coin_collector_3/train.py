@@ -30,7 +30,7 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
     dataset = GameStateDataset.from_dict(self.train_data)
-    train_loader = DataLoader(dataset, batch_size=20, shuffle=True)
+    train_loader = DataLoader(dataset, batch_size=40, shuffle=True)
 
     self.Q.train()
 
@@ -41,7 +41,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
                                                                     data[3].to(self.device)
 
         self.optimizer.zero_grad()
-        loss = self.Q.training_step((state_features_t, action, reward, state_features_t_plus_1), 0)
+        loss = self.Q.training_step((state_features_t, action, reward, state_features_t_plus_1), i)
         loss.backward()
         self.optimizer.step()
 

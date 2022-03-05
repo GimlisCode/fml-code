@@ -1,5 +1,4 @@
 import json
-from typing import Tuple, List
 
 from torch.utils.data import Dataset
 from torch.utils.data.dataset import T_co
@@ -66,11 +65,6 @@ class GameStateDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, index: int) -> T_co:
-        # feat_t = torch.tensor(self.state_features_t[index]).double()
-        # action = self.actions[index]
-        # reward = self.rewards[index]
-        # feat_t_plus_1 = torch.tensor(self.state_features_t_plus_1[index]).double()
-
         feat_t = torch.tensor(self.data[index].state_features_t).double()
         action = self.data[index].action
         reward = self.data[index].reward

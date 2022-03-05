@@ -11,12 +11,16 @@ class QNetwork(pl.LightningModule):
         self.layers = torch.nn.Sequential(
             torch.nn.Linear(features_in, out_features=16),
             torch.nn.ReLU(),
+            torch.nn.BatchNorm1d(16),
             torch.nn.Linear(16, 8),
             torch.nn.ReLU(),
+            torch.nn.BatchNorm1d(8),
             torch.nn.Linear(8, 6),
             torch.nn.ReLU(),
+            torch.nn.BatchNorm1d(6),
             torch.nn.Linear(6, 4),
             torch.nn.ReLU(),
+            torch.nn.BatchNorm1d(4),
             torch.nn.Linear(4, features_out),
             torch.nn.Tanh()
         )
@@ -30,8 +34,8 @@ class QNetwork(pl.LightningModule):
         return self.layers.forward(x)
 
     def configure_optimizers(self):
-        # optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
+        # optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
 
     def td_loss(self, y_t, action, reward, y_t_plus_1) -> torch.tensor:

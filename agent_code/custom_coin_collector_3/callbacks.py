@@ -55,7 +55,7 @@ def act(self, game_state: dict) -> str:
     if self.train and random.random() < random_prob:
         return np.random.choice(MOVE_ACTIONS)
 
-    features = state_to_features(game_state).to(self.device)
+    features = state_to_features(game_state).reshape((1, 16)).to(self.device)
     return MOVE_ACTIONS[torch.argmax(self.Q.forward(features)).cpu()]
 
 
