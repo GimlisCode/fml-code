@@ -20,11 +20,9 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
     reward = calculate_reward(events, old_game_state, new_game_state)
 
-    state_features_t = state_to_features(old_game_state)
-    state_features_t.to(self.device)
+    state_features_t = state_to_features(old_game_state).to(self.device)
 
-    state_features_t_plus_1 = state_to_features(new_game_state)
-    state_features_t_plus_1.to(self.device)
+    state_features_t_plus_1 = state_to_features(new_game_state).to(self.device)
 
     action = get_idx_for_action(self_action)
 

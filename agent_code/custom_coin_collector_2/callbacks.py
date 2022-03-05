@@ -19,7 +19,8 @@ MOVE_ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
 def setup(self):
     self.Q = QNetwork(features_in=7, features_out=4)
 
-    self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    #self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    self.device = torch.device('cpu')
     self.Q.to(self.device)
 
     try:
@@ -44,9 +45,8 @@ def act(self, game_state: dict) -> str:
     if self.train and random.random() < random_prob:
         return np.random.choice(MOVE_ACTIONS)
 
-    features = state_to_features(game_state)
-    features.to(self.device)
-    return MOVE_ACTIONS[torch.argmax(self.Q.forward(features))]
+    features = state_to_features(game_state).to(self.device)
+    return MOVE_ACTIONS[torch.argmax(self.Q.forward(features)).cpu()]
 
 
 def get_steps_between(agent_position, object_positions):
