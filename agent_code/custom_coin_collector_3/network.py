@@ -9,13 +9,13 @@ class QNetwork(pl.LightningModule):
         super().__init__()
 
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(features_in, out_features=7),
+            torch.nn.Linear(features_in, out_features=16),
             torch.nn.ReLU(),
-            torch.nn.Linear(7, 6),
+            torch.nn.Linear(16, 8),
             torch.nn.ReLU(),
-            torch.nn.Linear(6, 5),
+            torch.nn.Linear(8, 6),
             torch.nn.ReLU(),
-            torch.nn.Linear(5, 4),
+            torch.nn.Linear(6, 4),
             torch.nn.ReLU(),
             torch.nn.Linear(4, features_out),
             torch.nn.Tanh()
