@@ -6,7 +6,7 @@ import torch
 from scipy.spatial.distance import cityblock
 
 
-from agent_code.custom_coin_collector_3.network import QNetwork
+from .network import QNetwork
 
 
 from settings import COLS, ROWS
@@ -17,7 +17,7 @@ MOVE_ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
 
 
 def setup(self):
-    self.Q = QNetwork(features_in=7, features_out=4)
+    self.Q = QNetwork(features_in=16, features_out=4)
 
     #self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     self.device = torch.device('cpu')
@@ -112,18 +112,49 @@ def state_to_features(game_state: dict):
     features.append(our_position[0] / MAX_X)
     features.append(our_position[1] / MAX_Y)
 
+    one_hot_area_encoding = [0] * 9
+
+    if our_position[0] == 1 and our_position[1] == 1:
+        # top left corner
+        one_hot_area_encoding[0] = 1
+    elif our_position[0] == MAX_X and our_position[1] == 1:
+        # top right corner
+        one_hot_area_encoding[1] = 1
+    elif our_position[0] == 1 and our_position[1] == MAX_Y:
+        # bottom left corner
+        one_hot_area_encoding[2] = 1
+    elif our_position[0] == MAX_X and our_position[1] == MAX_Y:
+        # bottom right corner
+        one_hot_area_encoding[3] = 1
+    elif our_position[0] == 1:
+        # left edge
+        one_hot_area_encoding[4] = 1
+    elif our_position[0] == MAX_X:
+        # right edge
+        one_hot_area_encoding[5] = 1
+    elif our_position[1] == 1:
+        # top edge
+        one_hot_area_encoding[6] = 1
+    elif our_position[1] == MAX_Y:
+        # bottom edge
+        one_hot_area_encoding[7] = 1
+    else:
+        one_hot_area_encoding[8] = 1
+
+    features += one_hot_area_encoding
+
     features.append(1 if our_position[0] % 2 == 0 else 0)  # vertical blocks
     features.append(1 if our_position[1] % 2 == 0 else 0)  # horizontal blocks
 
     distances = get_nearest_coin_dist(game_state)
 
     if distances is None:
-        features.append(1)
-        features.append(1)
+        features.append(0)
+        features.append(0)
         features.append(0)  # bool that there is no coin
     else:
         features.append(distances[0] / MAX_X)  # relative distance along x-axis
         features.append(distances[1] / MAX_Y)  # relative distance along y-axis
         features.append(0)  # bool that there is no coin
 
-    return torch.tensor(features)  # 7 features
+    return torch.tensor(features)  # 7+9 features
