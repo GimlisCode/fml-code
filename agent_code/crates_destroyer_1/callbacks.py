@@ -146,7 +146,7 @@ def extract_crate_positions(field):
 def get_idx_for_state(game_state: dict):
     # number_of_near_bombs?
     # number_of_near_crates?
-    our_position = game_state["self"][3]
+    our_position = np.array(game_state["self"][3])
     crate_positions = extract_crate_positions(game_state["field"])
     bomb_positions = np.array([coords for coords, _ in game_state["bombs"]])
 
@@ -190,29 +190,29 @@ def get_idx_for_state(game_state: dict):
         # no blocks
         block_idx = 2
 
-    coin_dist_x_idx, coin_dist_y_idx = get_distance_indices(our_position, get_nearest_coin_dist(game_state))
+    coin_dist_x_idx, coin_dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))
 
     nearest_crates = get_k_nearest_object_positions(our_position, crate_positions, k=1)
 
     crate_indices = list()
     for crate_dist in nearest_crates:
-        crate_indices.append(get_distance_indices(our_position, crate_dist))
+        crate_indices.append(get_distance_indices(crate_dist - our_position if crate_dist is not None else None))
 
     nearest_bombs = get_k_nearest_bombs(our_position, bomb_positions, k=1)
 
     bomb_indices = list()
     for bomb_dist in nearest_bombs:
-        bomb_indices.append(get_distance_indices(our_position, bomb_dist))
+        bomb_indices.append(get_distance_indices(bomb_dist - our_position if bomb_dist is not None else None))
 
     return edge_idx, block_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0]
 
 
-def get_distance_indices(agent_position, object_positions):
-    if object_positions is None:
+def get_distance_indices(distance):
+    if distance is None:
         dist_x_idx = 3
         dist_y_idx = 3
     else:
-        dist_x, dist_y = object_positions[0] - agent_position[0], object_positions[1] - agent_position[1]
+        dist_x, dist_y = distance
 
         if dist_x > 0:
             dist_x_idx = 0
