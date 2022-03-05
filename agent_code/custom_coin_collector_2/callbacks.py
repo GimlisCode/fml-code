@@ -44,7 +44,9 @@ def act(self, game_state: dict) -> str:
     if self.train and random.random() < random_prob:
         return np.random.choice(MOVE_ACTIONS)
 
-    return MOVE_ACTIONS[torch.argmax(self.Q.forward(state_to_features(game_state)))]
+    features = state_to_features(game_state)
+    features.to(self.device)
+    return MOVE_ACTIONS[torch.argmax(self.Q.forward(features))]
 
 
 def get_steps_between(agent_position, object_positions):
