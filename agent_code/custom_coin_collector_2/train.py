@@ -1,12 +1,14 @@
 from typing import List
 
+import numpy as np
+
 import events as e
 from .callbacks import *
 
 
 def setup_training(self):
-    self.Q.learning_rate = 0.001
-    self.Q.gamma = 0.5
+    self.Q.learning_rate = 0.00001
+    self.Q.gamma = 0.25
 
     self.optimizer = self.Q.configure_optimizers()
 
@@ -47,8 +49,8 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
     game_rewards = {
-        e.COIN_COLLECTED: 5,
-        e.INVALID_ACTION: -10
+        e.COIN_COLLECTED: 1,
+        e.INVALID_ACTION: -1
 
     }
     reward_sum = 0
@@ -60,8 +62,8 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     current_min_dist = np.min(get_steps_between(np.array(new_game_state["self"][3]), np.array(new_game_state["coins"])))
 
     if current_min_dist < previous_min_dist:
-        reward_sum += 3
+        reward_sum += 0.4
     else:
-        reward_sum -= 5
+        reward_sum -= 0.5
 
-    return reward_sum
+    return np.clip(reward_sum, a_min=-1, a_max=1)
