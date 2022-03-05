@@ -98,7 +98,7 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         e.INVALID_ACTION: -10,
         e.KILLED_SELF: -20,
         e.CRATE_DESTROYED: 10
-
+        # e.BOMB_DROPPED: -5
     }
     reward_sum = 0
     for event in events:
@@ -117,7 +117,7 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         elif current_min_dist == previous_min_dist:
             pass
         else:
-            reward_sum -= 5
+            reward_sum -= 2
 
     previous_bomb_positions = np.array([coords for coords, _ in old_game_state["bombs"]])
     current_bomb_positions = np.array([coords for coords, _ in new_game_state["bombs"]])
@@ -125,9 +125,14 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     previous_near_bombs = objects_in_bomb_dist(previous_agent_position, previous_bomb_positions)
     current_near_bombs = objects_in_bomb_dist(current_agent_position, current_bomb_positions)
 
+    # if len(current_near_bombs) == 0:
+    #     reward_sum += 5
+    # else:
+    #     reward_sum -= 5 * len(current_near_bombs)
+
     if len(previous_near_bombs) <= len(current_near_bombs):
         reward_sum -= 5
     else:
-        reward_sum += 2
+        reward_sum += 3
 
     return reward_sum
