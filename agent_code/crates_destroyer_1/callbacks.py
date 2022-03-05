@@ -205,7 +205,6 @@ def get_idx_for_state(game_state: dict):
         bomb_indices.append(get_distance_indices(our_position, bomb_dist))
 
     return edge_idx, block_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0]
-    # return edge_idx, block_idx, *crate_indices[0], *bomb_indices[0]
 
 
 def get_distance_indices(agent_position, object_positions):
