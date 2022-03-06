@@ -76,7 +76,7 @@ def get_steps_between(agent_position, object_positions) -> np.ndarray:
     return obj_dists_cityblock
 
 
-def get_nearest_coin_dist(game_state: dict) -> np.array:
+def get_nearest_coin_dist(game_state: dict):
     # This is the dict before the game begins and after it ends
     if game_state is None:
         return [[np.nan, np.nan]]
@@ -198,18 +198,17 @@ def get_idx_for_state(game_state: dict):
     return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0]
 
 
-def are_objects_in_sight(agent_position, object_positions):
-    # step_dist = get_steps_between(agent_position, object_positions)
-    obj_dist_x_y = object_positions - agent_position
-
-    blocks_not_vertical = agent_position[0] % 2 != 0
-    blocks_not_horizontal = agent_position[1] % 2 != 0
-
-    same_column = obj_dist_x_y[:, 0] == 0
-    same_row = obj_dist_x_y[:, 1] == 0
-
-    return np.logical_or(np.logical_and(same_column, blocks_not_vertical),
-                         np.logical_and(same_row, blocks_not_horizontal))
+# def are_objects_in_sight(agent_position, object_positions):
+#     obj_dist_x_y = object_positions - agent_position
+#
+#     blocks_not_vertical = agent_position[0] % 2 != 0
+#     blocks_not_horizontal = agent_position[1] % 2 != 0
+#
+#     same_column = obj_dist_x_y[:, 0] == 0
+#     same_row = obj_dist_x_y[:, 1] == 0
+#
+#     return np.logical_or(np.logical_and(same_column, blocks_not_vertical),
+#                          np.logical_and(same_row, blocks_not_horizontal))
 
 
 def get_distance_indices(distances):

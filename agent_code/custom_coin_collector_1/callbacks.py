@@ -74,23 +74,23 @@ def get_steps_between(agent_position, object_positions):
     return obj_dists_cityblock
 
 
-def state_to_features(game_state: dict) -> np.array:
+def get_nearest_coin_dist(game_state: dict):
     # This is the dict before the game begins and after it ends
     if game_state is None:
-        return None
+        return [[np.nan, np.nan]]
 
     our_position = np.array(game_state["self"][3])
     coin_positions = np.array(game_state["coins"])
 
     if len(coin_positions) == 0:
-        return None
+        return [[np.nan, np.nan]]
 
     # coin_dists = [cityblock(our_position, x) for x in coin_positions]
     coin_dists = get_steps_between(our_position, coin_positions)
 
     nearest_coin_dist_x, nearest_coin_dist_y = coin_positions[np.argmin(coin_dists)] - our_position
 
-    return nearest_coin_dist_x, nearest_coin_dist_y
+    return [[nearest_coin_dist_x, nearest_coin_dist_y]]
 
 
 def get_idx_for_action(action):
@@ -137,25 +137,23 @@ def get_idx_for_state(game_state: dict):
         # no blocks in our possible moving directions
         pos_idx = 10
 
-    distances = state_to_features(game_state)
-
-    if distances is None:
-        return pos_idx, 0, 0
-
-    nearest_coin_dist_x, nearest_coin_dist_y = distances
-
-    if nearest_coin_dist_x > 0:
-        dist_x_idx = 0
-    elif nearest_coin_dist_x < 0:
-        dist_x_idx = 1
-    else:
-        dist_x_idx = 2
-
-    if nearest_coin_dist_y > 0:
-        dist_y_idx = 0
-    elif nearest_coin_dist_y < 0:
-        dist_y_idx = 1
-    else:
-        dist_y_idx = 2
+    dist_x_idx, dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))[0]
 
     return pos_idx, dist_x_idx, dist_y_idx
+
+
+def get_distance_indices(distances):
+    if isinstance(distances, list):
+        distances = np.array(distances)
+
+    result = np.ones_like(distances, dtype=int) + 1  # 2 as the else case, i.e. zero distance
+
+    result[np.isnan(distances)] = -1  # i.e. last index
+
+    result[:, 0][distances[:, 0] > 0] = 0
+    result[:, 0][distances[:, 0] < 0] = 1
+
+    result[:, 1][distances[:, 1] > 0] = 0
+    result[:, 1][distances[:, 1] < 0] = 1
+
+    return result
