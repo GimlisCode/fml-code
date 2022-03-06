@@ -22,7 +22,7 @@ class QNetwork(pl.LightningModule):
             torch.nn.ReLU(),
             torch.nn.BatchNorm1d(4),
             torch.nn.Linear(4, features_out),
-            torch.nn.Tanh()
+            torch.nn.ReLU()
         )
 
         self.learning_rate = learning_rate
@@ -34,12 +34,12 @@ class QNetwork(pl.LightningModule):
         return self.layers.forward(x)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
-        # optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        # optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
 
     def td_loss(self, y_t, action, reward, y_t_plus_1) -> torch.tensor:
-        return torch.mean(torch.abs(torch.clip(self.gamma * torch.max(y_t_plus_1, dim=1, keepdim=True)[0] + reward, min=-1, max=1) - y_t[:, action]))
+        return torch.mean(torch.abs(torch.clip(self.gamma * torch.max(y_t_plus_1, dim=1, keepdim=True)[0] + reward, min=0) - y_t[:, action]))
 
     def training_step(self, train_batch, batch_idx):
         state_features_t, action, reward, state_features_t_plus_1 = train_batch

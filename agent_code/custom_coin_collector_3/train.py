@@ -40,6 +40,10 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
                                                                     data[2].to(self.device), \
                                                                     data[3].to(self.device)
 
+        if state_features_t.shape[0] == 1:
+            print("Hm...", i)
+            continue
+
         self.optimizer.zero_grad()
         loss = self.Q.training_step((state_features_t, action, reward, state_features_t_plus_1), i)
         loss.backward()

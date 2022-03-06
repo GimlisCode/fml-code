@@ -155,6 +155,6 @@ def state_to_features(game_state: dict):
     else:
         features.append(distances[0] / MAX_X)  # relative distance along x-axis
         features.append(distances[1] / MAX_Y)  # relative distance along y-axis
-        features.append(0)  # bool that there is no coin
+        features.append(1)  # bool that there is no coin
 
     return torch.tensor(features)  # 7+9 features
