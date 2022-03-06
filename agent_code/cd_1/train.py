@@ -93,10 +93,9 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
     game_rewards = {
-        e.COIN_COLLECTED: 5,
+        # e.COIN_COLLECTED: 5,
         e.INVALID_ACTION: -10,
-        e.KILLED_SELF: -50,
-        e.CRATE_DESTROYED: 10
+        e.KILLED_SELF: -50
     }
     reward_sum = 0
     for event in events:
@@ -106,16 +105,16 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     previous_agent_position = np.array(old_game_state["self"][3])
     current_agent_position = np.array(new_game_state["self"][3])
 
-    if len(old_game_state["coins"]) > 0 and len(new_game_state["coins"]) > 0:
-        previous_min_dist = np.min(get_steps_between(previous_agent_position, np.array(old_game_state["coins"])))
-        current_min_dist = np.min(get_steps_between(current_agent_position, np.array(new_game_state["coins"])))
-
-        if current_min_dist < previous_min_dist:
-            reward_sum += 3
-        elif current_min_dist == previous_min_dist:
-            pass
-        else:
-            reward_sum -= 2
+    # if len(old_game_state["coins"]) > 0 and len(new_game_state["coins"]) > 0:
+    #     previous_min_dist = np.min(get_steps_between(previous_agent_position, np.array(old_game_state["coins"])))
+    #     current_min_dist = np.min(get_steps_between(current_agent_position, np.array(new_game_state["coins"])))
+    #
+    #     if current_min_dist < previous_min_dist:
+    #         reward_sum += 3
+    #     elif current_min_dist == previous_min_dist:
+    #         pass
+    #     else:
+    #         reward_sum -= 2
 
     previous_bomb_positions = np.array([coords for coords, _ in old_game_state["bombs"]])
     current_bomb_positions = np.array([coords for coords, _ in new_game_state["bombs"]])
@@ -127,5 +126,16 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         reward_sum -= 5
     else:
         reward_sum += 3
+
+    if e.BOMB_DROPPED in events and previous_agent_position == current_agent_position:
+        crates = len(objects_in_bomb_dist(previous_agent_position, extract_crate_positions(old_game_state["field"])))
+
+        if crates > 0:
+            reward_sum += 2 * crates
+        else:
+            reward_sum -= 5
+
+    if e.BOMB_EXPLODED in events and e.KILLED_SELF not in events:
+        reward_sum += 1
 
     return reward_sum
