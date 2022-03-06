@@ -6,7 +6,7 @@ import torch
 from scipy.spatial.distance import cityblock
 
 
-from agent_code.custom_coin_collector_2.network import QNetwork
+from agent_code.cc_2.network import QNetwork
 
 
 from settings import COLS, ROWS
