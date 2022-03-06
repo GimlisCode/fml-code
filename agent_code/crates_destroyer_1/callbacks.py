@@ -79,30 +79,30 @@ def get_steps_between(agent_position, object_positions) -> np.ndarray:
 def get_nearest_coin_dist(game_state: dict) -> np.array:
     # This is the dict before the game begins and after it ends
     if game_state is None:
-        return None
+        return [[np.nan, np.nan]]
 
     our_position = np.array(game_state["self"][3])
     coin_positions = np.array(game_state["coins"])
 
     if len(coin_positions) == 0:
-        return None
+        return [[np.nan, np.nan]]
 
     # coin_dists = [cityblock(our_position, x) for x in coin_positions]
     coin_dists = get_steps_between(our_position, coin_positions)
 
     nearest_coin_dist_x, nearest_coin_dist_y = coin_positions[np.argmin(coin_dists)] - our_position
 
-    return nearest_coin_dist_x, nearest_coin_dist_y
+    return [[nearest_coin_dist_x, nearest_coin_dist_y]]
 
 
 def get_k_nearest_object_positions(agent_position, object_positions, k=1) -> list:
     if len(object_positions) == 0:
-        return [None] * k
+        return [[np.nan, np.nan]] * k
 
     k_orig = k
     k = min(k, len(object_positions))
 
-    return object_positions[np.argpartition(get_steps_between(agent_position, object_positions), kth=k-1)[:k]].tolist() + [None] * (k_orig - k)
+    return object_positions[np.argpartition(get_steps_between(agent_position, object_positions), kth=k-1)[:k]].tolist() + [[np.nan, np.nan]] * (k_orig - k)
 
 
 def objects_in_bomb_dist(agent_position, obj_positions, dist=3):
@@ -127,12 +127,12 @@ def get_k_nearest_bombs(agent_position, bomb_positions, k) -> list:
     dangerous_bombs = objects_in_bomb_dist(agent_position, bomb_positions, dist=3)
 
     if len(dangerous_bombs) == 0:
-        return [None] * k
+        return [[np.nan, np.nan]] * k
 
     k_orig = k
     k = min(k, len(dangerous_bombs))
 
-    return dangerous_bombs[np.argpartition(get_steps_between(agent_position, dangerous_bombs), kth=k-1)[:k]].tolist() + [None] * (k_orig - k)
+    return dangerous_bombs[np.argpartition(get_steps_between(agent_position, dangerous_bombs), kth=k-1)[:k]].tolist() + [[np.nan, np.nan]] * (k_orig - k)
 
 
 def get_idx_for_action(action):
@@ -187,42 +187,43 @@ def get_idx_for_state(game_state: dict):
         # no blocks in our possible moving directions
         pos_idx = 10
 
-    coin_dist_x_idx, coin_dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))
+    coin_dist_x_idx, coin_dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))[0]
 
     nearest_crates = get_k_nearest_object_positions(our_position, crate_positions, k=1)
-
-    crate_indices = list()
-    for crate_dist in nearest_crates:
-        crate_indices.append(get_distance_indices(crate_dist - our_position if crate_dist is not None else None))
+    crate_indices = get_distance_indices(nearest_crates - our_position)
 
     nearest_bombs = get_k_nearest_bombs(our_position, bomb_positions, k=1)
-
-    bomb_indices = list()
-    for bomb_dist in nearest_bombs:
-        bomb_indices.append(get_distance_indices(bomb_dist - our_position if bomb_dist is not None else None))
+    bomb_indices = get_distance_indices(nearest_bombs - our_position)
 
     return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0]
 
 
-def get_distance_indices(distance):
-    if distance is None:
-        dist_x_idx = 3
-        dist_y_idx = 3
-    else:
-        dist_x, dist_y = distance
+def are_objects_in_sight(agent_position, object_positions):
+    # step_dist = get_steps_between(agent_position, object_positions)
+    obj_dist_x_y = object_positions - agent_position
 
-        if dist_x > 0:
-            dist_x_idx = 0
-        elif dist_x < 0:
-            dist_x_idx = 1
-        else:
-            dist_x_idx = 2
+    blocks_not_vertical = agent_position[0] % 2 != 0
+    blocks_not_horizontal = agent_position[1] % 2 != 0
 
-        if dist_y > 0:
-            dist_y_idx = 0
-        elif dist_y < 0:
-            dist_y_idx = 1
-        else:
-            dist_y_idx = 2
+    same_column = obj_dist_x_y[:, 0] == 0
+    same_row = obj_dist_x_y[:, 1] == 0
 
-    return dist_x_idx, dist_y_idx
+    return np.logical_or(np.logical_and(same_column, blocks_not_vertical),
+                         np.logical_and(same_row, blocks_not_horizontal))
+
+
+def get_distance_indices(distances):
+    if isinstance(distances, list):
+        distances = np.array(distances)
+
+    result = np.ones_like(distances, dtype=int) + 1  # 2 as the else case, i.e. zero distance
+
+    result[np.isnan(distances)] = -1  # i.e. last index
+
+    result[:, 0][distances[:, 0] > 0] = 0
+    result[:, 0][distances[:, 0] < 0] = 1
+
+    result[:, 1][distances[:, 1] > 0] = 0
+    result[:, 1][distances[:, 1] < 0] = 1
+
+    return result
