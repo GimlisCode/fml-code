@@ -33,7 +33,7 @@ def setup(self):
             print("Loaded")
     except (EOFError, FileNotFoundError):
         # self.Q = np.random.rand(9, 3, 3, 3, 4) * 3
-        self.Q = np.ones((9, 3, 3, 3, 4)) * 3
+        self.Q = np.ones((11, 3, 3, 4)) * 3
 
 
 def act(self, game_state: dict) -> str:
@@ -74,23 +74,23 @@ def get_steps_between(agent_position, object_positions):
     return obj_dists_cityblock
 
 
-def state_to_features(game_state: dict) -> np.array:
+def get_nearest_coin_dist(game_state: dict):
     # This is the dict before the game begins and after it ends
     if game_state is None:
-        return None
+        return [[np.nan, np.nan]]
 
     our_position = np.array(game_state["self"][3])
     coin_positions = np.array(game_state["coins"])
 
     if len(coin_positions) == 0:
-        return None
+        return [[np.nan, np.nan]]
 
     # coin_dists = [cityblock(our_position, x) for x in coin_positions]
     coin_dists = get_steps_between(our_position, coin_positions)
 
     nearest_coin_dist_x, nearest_coin_dist_y = coin_positions[np.argmin(coin_dists)] - our_position
 
-    return nearest_coin_dist_x, nearest_coin_dist_y
+    return [[nearest_coin_dist_x, nearest_coin_dist_y]]
 
 
 def get_idx_for_action(action):
@@ -105,60 +105,55 @@ def get_idx_for_state(game_state: dict):
 
     if our_position[0] == 1 and our_position[1] == 1:
         # top left corner
-        edge_idx = 0
+        pos_idx = 0
     elif our_position[0] == MAX_X and our_position[1] == 1:
         # top right corner
-        edge_idx = 1
+        pos_idx = 1
     elif our_position[0] == 1 and our_position[1] == MAX_Y:
         # bottom left corner
-        edge_idx = 2
+        pos_idx = 2
     elif our_position[0] == MAX_X and our_position[1] == MAX_Y:
         # bottom right corner
-        edge_idx = 3
-    elif our_position[0] == 1:
-        # left edge
-        edge_idx = 4
-    elif our_position[0] == MAX_X:
-        # right edge
-        edge_idx = 5
-    elif our_position[1] == 1:
-        # top edge
-        edge_idx = 6
-    elif our_position[1] == MAX_Y:
-        # bottom edge
-        edge_idx = 7
-    else:
-        edge_idx = 8
-
-    if our_position[0] % 2 == 0:
+        pos_idx = 3
+    elif our_position[0] % 2 == 0:
         # vertical blocks
-        block_idx = 0
+        pos_idx = 4
     elif our_position[1] % 2 == 0:
         # horizontal blocks
-        block_idx = 1
+        pos_idx = 5
+    elif our_position[0] == 1:
+        # left edge
+        pos_idx = 6
+    elif our_position[0] == MAX_X:
+        # right edge
+        pos_idx = 7
+    elif our_position[1] == 1:
+        # top edge
+        pos_idx = 8
+    elif our_position[1] == MAX_Y:
+        # bottom edge
+        pos_idx = 9
     else:
-        # no blocks
-        block_idx = 2
+        # no blocks in our possible moving directions
+        pos_idx = 10
 
-    distances = state_to_features(game_state)
+    dist_x_idx, dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))[0]
 
-    if distances is None:
-        return edge_idx, block_idx, 0, 0
+    return pos_idx, dist_x_idx, dist_y_idx
 
-    nearest_coin_dist_x, nearest_coin_dist_y = distances
 
-    if nearest_coin_dist_x > 0:
-        dist_x_idx = 0
-    elif nearest_coin_dist_x < 0:
-        dist_x_idx = 1
-    else:
-        dist_x_idx = 2
+def get_distance_indices(distances):
+    if isinstance(distances, list):
+        distances = np.array(distances)
 
-    if nearest_coin_dist_y > 0:
-        dist_y_idx = 0
-    elif nearest_coin_dist_y < 0:
-        dist_y_idx = 1
-    else:
-        dist_y_idx = 2
+    result = np.ones_like(distances, dtype=int) + 1  # 2 as the else case, i.e. zero distance
 
-    return edge_idx, block_idx, dist_x_idx, dist_y_idx
+    result[np.isnan(distances)] = -1  # i.e. last index
+
+    result[:, 0][distances[:, 0] > 0] = 0
+    result[:, 0][distances[:, 0] < 0] = 1
+
+    result[:, 1][distances[:, 1] > 0] = 0
+    result[:, 1][distances[:, 1] < 0] = 1
+
+    return result

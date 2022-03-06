@@ -62,11 +62,11 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
     reward = calculate_reward(events, old_game_state, new_game_state)
 
-    state_idx_w_t, state_idx_x_t, state_idx_y_t, state_idx_z_t = get_idx_for_state(old_game_state)
-    state_idx_w_t1, state_idx_x_t1, state_idx_y_t1, state_idx_z_t1 = get_idx_for_state(new_game_state)
+    state_idx_t = get_idx_for_state(old_game_state)
+    state_idx_t1 = get_idx_for_state(new_game_state)
     action_idx_t = get_idx_for_action(self_action)
 
-    self.Q[state_idx_w_t, state_idx_x_t, state_idx_y_t, state_idx_z_t, action_idx_t] += self.alpha * (reward + self.gamma * np.max(self.Q[state_idx_w_t1, state_idx_x_t1, state_idx_y_t1, state_idx_z_t1]) - self.Q[state_idx_w_t, state_idx_x_t, state_idx_y_t, state_idx_z_t, action_idx_t])
+    self.Q[state_idx_t][action_idx_t] += self.alpha * (reward + self.gamma * np.max(self.Q[state_idx_t1]) - self.Q[state_idx_t][action_idx_t])
 
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
