@@ -32,7 +32,7 @@ def setup(self):
             print("Loaded")
     except (EOFError, FileNotFoundError):
         # self.Q = np.random.rand(9, 3, 3, 3, 4) * 3
-        self.Q = np.ones((9, 3, 4, 4, 4, 4, 4, 4, 6)) * 3
+        self.Q = np.ones((11, 4, 4, 4, 4, 4, 4, 6)) * 3
 
 
 def act(self, game_state: dict) -> str:
@@ -155,40 +155,37 @@ def get_idx_for_state(game_state: dict):
 
     if our_position[0] == 1 and our_position[1] == 1:
         # top left corner
-        edge_idx = 0
+        pos_idx = 0
     elif our_position[0] == MAX_X and our_position[1] == 1:
         # top right corner
-        edge_idx = 1
+        pos_idx = 1
     elif our_position[0] == 1 and our_position[1] == MAX_Y:
         # bottom left corner
-        edge_idx = 2
+        pos_idx = 2
     elif our_position[0] == MAX_X and our_position[1] == MAX_Y:
         # bottom right corner
-        edge_idx = 3
-    elif our_position[0] == 1:
-        # left edge
-        edge_idx = 4
-    elif our_position[0] == MAX_X:
-        # right edge
-        edge_idx = 5
-    elif our_position[1] == 1:
-        # top edge
-        edge_idx = 6
-    elif our_position[1] == MAX_Y:
-        # bottom edge
-        edge_idx = 7
-    else:
-        edge_idx = 8
-
-    if our_position[0] % 2 == 0:
+        pos_idx = 3
+    elif our_position[0] % 2 == 0:
         # vertical blocks
-        block_idx = 0
+        pos_idx = 4
     elif our_position[1] % 2 == 0:
         # horizontal blocks
-        block_idx = 1
+        pos_idx = 5
+    elif our_position[0] == 1:
+        # left edge
+        pos_idx = 6
+    elif our_position[0] == MAX_X:
+        # right edge
+        pos_idx = 7
+    elif our_position[1] == 1:
+        # top edge
+        pos_idx = 8
+    elif our_position[1] == MAX_Y:
+        # bottom edge
+        pos_idx = 9
     else:
-        # no blocks
-        block_idx = 2
+        # no blocks in our possible moving directions
+        pos_idx = 10
 
     coin_dist_x_idx, coin_dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))
 
@@ -204,7 +201,7 @@ def get_idx_for_state(game_state: dict):
     for bomb_dist in nearest_bombs:
         bomb_indices.append(get_distance_indices(bomb_dist - our_position if bomb_dist is not None else None))
 
-    return edge_idx, block_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0]
+    return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0]
 
 
 def get_distance_indices(distance):
