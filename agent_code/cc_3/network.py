@@ -39,7 +39,7 @@ class QNetwork(pl.LightningModule):
         return optimizer
 
     def td_loss(self, y_t, action, reward, y_t_plus_1) -> torch.tensor:
-        return torch.mean(torch.abs(torch.clip(self.gamma * torch.max(y_t_plus_1, dim=1, keepdim=True)[0] + reward, min=0) - y_t[:, action]))
+        return torch.mean(torch.square(torch.clip(self.gamma * torch.max(y_t_plus_1, dim=1, keepdim=True)[0] + reward, min=0) - y_t[:, action]))
 
     def training_step(self, train_batch, batch_idx):
         state_features_t, action, reward, state_features_t_plus_1 = train_batch

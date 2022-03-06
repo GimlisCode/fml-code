@@ -41,7 +41,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
                                                                     data[3].to(self.device)
 
         if state_features_t.shape[0] == 1:
-            print("Hm...", i)
+            # if there is only one element in the last batch
             continue
 
         self.optimizer.zero_grad()
@@ -72,8 +72,8 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
     game_rewards = {
-        e.COIN_COLLECTED: 1,
-        e.INVALID_ACTION: -1
+        e.COIN_COLLECTED: 10,
+        e.INVALID_ACTION: -10
 
     }
     reward_sum = 0
@@ -85,8 +85,8 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     current_min_dist = np.min(get_steps_between(np.array(new_game_state["self"][3]), np.array(new_game_state["coins"])))
 
     if current_min_dist < previous_min_dist:
-        reward_sum += 0.4
+        reward_sum += 3
     else:
-        reward_sum -= 0.5
+        reward_sum -= -5
 
     return np.clip(reward_sum, a_min=-1, a_max=1).item()
