@@ -31,8 +31,8 @@ def setup(self):
             self.Q = pickle.load(file)
             print("Loaded")
     except (EOFError, FileNotFoundError):
-        # self.Q = np.random.rand(9, 3, 3, 3, 4) * 3
-        self.Q = np.ones((11, 4, 4, 4, 4, 4, 4, 6)) * 3
+        # self.Q = np.ones((11, 4, 4, 4, 4, 4, 4, 16, 6)) * 3
+        self.Q = np.ones((11, 4, 4, 4, 4, 16, 6)) * 3
 
 
 def act(self, game_state: dict) -> str:
@@ -143,9 +143,21 @@ def extract_crate_positions(field):
     return np.argwhere(field == 1)
 
 
+class Position:
+    TOP_LEFT_CORNER = 0
+    TOP_RIGHT_CORNER = 1
+    BOTTOM_LEFT_CORNER = 2
+    BOTTOM_RIGHT_CORNER = 3
+    VERTICAL_BLOCKS = 4
+    HORIZONTAL_BLOCKS = 5
+    LEFT_EDGE = 6
+    RIGHT_EDGE = 7
+    TOP_EDGE = 8
+    BOTTOM_EDGE = 9
+    NO_BLOCKS_AROUND = 10
+
+
 def get_idx_for_state(game_state: dict):
-    # number_of_near_bombs?
-    # number_of_near_crates?
     our_position = np.array(game_state["self"][3])
     crate_positions = extract_crate_positions(game_state["field"])
     bomb_positions = np.array([coords for coords, _ in game_state["bombs"]])
@@ -154,40 +166,30 @@ def get_idx_for_state(game_state: dict):
     MAX_Y = ROWS - 2
 
     if our_position[0] == 1 and our_position[1] == 1:
-        # top left corner
-        pos_idx = 0
+        pos_idx = Position.TOP_LEFT_CORNER
     elif our_position[0] == MAX_X and our_position[1] == 1:
-        # top right corner
-        pos_idx = 1
+        pos_idx = Position.TOP_RIGHT_CORNER
     elif our_position[0] == 1 and our_position[1] == MAX_Y:
-        # bottom left corner
-        pos_idx = 2
+        pos_idx = Position.BOTTOM_LEFT_CORNER
     elif our_position[0] == MAX_X and our_position[1] == MAX_Y:
-        # bottom right corner
-        pos_idx = 3
+        pos_idx = Position.BOTTOM_RIGHT_CORNER
     elif our_position[0] % 2 == 0:
-        # vertical blocks
-        pos_idx = 4
+        pos_idx = Position.VERTICAL_BLOCKS
     elif our_position[1] % 2 == 0:
-        # horizontal blocks
-        pos_idx = 5
+        pos_idx = Position.HORIZONTAL_BLOCKS
     elif our_position[0] == 1:
-        # left edge
-        pos_idx = 6
+        pos_idx = Position.LEFT_EDGE
     elif our_position[0] == MAX_X:
-        # right edge
-        pos_idx = 7
+        pos_idx = Position.RIGHT_EDGE
     elif our_position[1] == 1:
-        # top edge
-        pos_idx = 8
+        pos_idx = Position.TOP_EDGE
     elif our_position[1] == MAX_Y:
-        # bottom edge
-        pos_idx = 9
+        pos_idx = Position.BOTTOM_EDGE
     else:
         # no blocks in our possible moving directions
-        pos_idx = 10
+        pos_idx = Position.NO_BLOCKS_AROUND
 
-    coin_dist_x_idx, coin_dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))[0]
+    # coin_dist_x_idx, coin_dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))[0]
 
     nearest_crates = get_k_nearest_object_positions(our_position, crate_positions, k=1)
     crate_indices = get_distance_indices(nearest_crates - our_position)
@@ -195,7 +197,10 @@ def get_idx_for_state(game_state: dict):
     nearest_bombs = get_k_nearest_bombs(our_position, bomb_positions, k=1)
     bomb_indices = get_distance_indices(nearest_bombs - our_position)
 
-    return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0]
+    expl_idx = get_explosion_indices(our_position, game_state["explosion_map"])
+
+    # return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0], expl_idx
+    return pos_idx, *crate_indices[0], *bomb_indices[0], expl_idx
 
 
 # def are_objects_in_sight(agent_position, object_positions):
@@ -226,3 +231,14 @@ def get_distance_indices(distances):
     result[:, 1][distances[:, 1] < 0] = 1
 
     return result
+
+
+def get_explosion_indices(agent_position, explosion_map):
+    x, y = agent_position
+
+    left = 1 if explosion_map[x - 1, y] != 0 else 0
+    right = 2 if explosion_map[x + 1, y] != 0 else 0
+    top = 4 if explosion_map[x, y - 1] != 0 else 0
+    bottom = 8 if explosion_map[x, y + 1] != 0 else 0
+
+    return left & right & top & bottom

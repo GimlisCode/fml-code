@@ -93,10 +93,9 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
     game_rewards = {
-        e.COIN_FOUND: 5,
         e.COIN_COLLECTED: 5,
         e.INVALID_ACTION: -10,
-        e.KILLED_SELF: -20,
+        e.KILLED_SELF: -50,
         e.CRATE_DESTROYED: 10
     }
     reward_sum = 0
