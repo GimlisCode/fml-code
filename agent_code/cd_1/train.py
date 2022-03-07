@@ -127,7 +127,7 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     else:
         reward_sum += 3
 
-    if e.BOMB_DROPPED in events and previous_agent_position == current_agent_position:
+    if e.BOMB_DROPPED in events and np.all(previous_agent_position == current_agent_position):
         crates = len(objects_in_bomb_dist(previous_agent_position, extract_crate_positions(old_game_state["field"])))
 
         if crates > 0:
