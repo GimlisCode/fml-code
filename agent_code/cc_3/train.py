@@ -72,7 +72,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
     game_rewards = {
-        e.COIN_COLLECTED: 10,
+        e.COIN_COLLECTED: 5,
         e.INVALID_ACTION: -10
 
     }

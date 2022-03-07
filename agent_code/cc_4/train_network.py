@@ -1,0 +1,54 @@
+import json
+
+from torch.utils.data import DataLoader
+import torch
+
+from agent_code.cc_4.dataset import GameStateDataset
+from agent_code.cc_4.network import QNetwork
+
+
+def train(network: QNetwork, data_path, device, num_of_epochs: int = 25, save_to: str = "model.pt"):
+    dataset = GameStateDataset(data_path)
+    train_loader = DataLoader(dataset, batch_size=40, shuffle=True)
+
+    optimizer = network.configure_optimizers()
+
+    network.train()
+
+    running_loss = list()
+
+    for epoch in range(num_of_epochs):
+        print(epoch)
+        for i, data in enumerate(train_loader):
+            state_features_t, action, reward, state_features_t_plus_1 = data[0].to(device), \
+                                                                        data[1].to(device), \
+                                                                        data[2].to(device), \
+                                                                        data[3].to(device)
+
+            if state_features_t.shape[0] == 1:
+                # if there is only one element in the last batch
+                continue
+
+            optimizer.zero_grad()
+            loss = network.training_step((state_features_t, action, reward, state_features_t_plus_1), i)
+            loss.backward()
+            optimizer.step()
+
+            running_loss.append(loss.item())
+
+    network.eval()
+
+    network.save(save_to)
+
+    return running_loss
+
+
+if __name__ == '__main__':
+    Q = QNetwork(features_out=4, learning_rate=0.001)
+    data_path = "../cc_1/train_data"
+    device = torch.device('cpu')
+
+    loss = train(Q, data_path, device)
+
+    with open("./loss.json", "w") as f:
+        f.write(json.dumps({"loss": loss}))

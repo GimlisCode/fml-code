@@ -45,8 +45,9 @@ class QNetwork(pl.LightningModule):
         state_features_t, action, reward, state_features_t_plus_1 = train_batch
 
         with torch.no_grad():
-            y_t = self.forward(state_features_t)
-        y_t_plus_1 = self.forward(state_features_t_plus_1)
+            y_t_plus_1 = self.forward(state_features_t_plus_1)
+
+        y_t = self.forward(state_features_t)
 
         loss = self.td_loss(y_t, action, reward, y_t_plus_1)
 

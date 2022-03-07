@@ -1,5 +1,7 @@
+import json
 import pickle
 import random
+from pathlib import Path
 
 import numpy as np
 from scipy.spatial.distance import cityblock
@@ -35,6 +37,21 @@ def setup(self):
         # self.Q = np.random.rand(9, 3, 3, 3, 4) * 3
         self.Q = np.ones((11, 3, 3, 4)) * 3
 
+    train_data_path = Path("train_data")
+
+    if not train_data_path.exists():
+        train_data_path.mkdir()
+
+    idx_so_far = [int(f.name.split("_")[0]) for f in train_data_path.glob("*.tif")]
+
+    self.img_idx = 0 if len(idx_so_far) == 0 else max(idx_so_far) + 1
+
+    try:
+        with open("train_data/meta_info.json", "r") as file:
+            self.meta_info = [TrainDataPoint.from_dict(x) for x in json.loads(file.read())["meta_info"]]
+    except FileNotFoundError:
+        self.meta_info = list()
+
 
 def act(self, game_state: dict) -> str:
     """
@@ -47,7 +64,7 @@ def act(self, game_state: dict) -> str:
     """
     current_round = game_state["round"]
 
-    random_prob = max(.5**(1 + current_round / 15), 0.01)
+    random_prob = max(.5**(1 + current_round / 100), 0.1)
     if self.train and random.random() < random_prob:
         self.logger.debug("Choosing action purely at random.")
         return np.random.choice(MOVE_ACTIONS)
@@ -139,7 +156,7 @@ def get_idx_for_state(game_state: dict):
 
     dist_x_idx, dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))[0]
 
-    return pos_idx, dist_x_idx, dist_y_idx
+    return pos_idx, int(dist_x_idx), int(dist_y_idx)
 
 
 def get_distance_indices(distances):
@@ -157,3 +174,31 @@ def get_distance_indices(distances):
     result[:, 1][distances[:, 1] < 0] = 1
 
     return result
+
+
+class TrainDataPoint:
+    def __init__(self, state_features_t, action, reward, state_features_t_plus_1):
+        self.state_features_t = state_features_t
+        self.action = action
+        self.reward = reward
+        self.state_features_t_plus_1 = state_features_t_plus_1
+
+    @staticmethod
+    def from_dict(obj: dict):
+        return TrainDataPoint(obj["state_features_t"], obj["action"], obj["reward"], obj["state_features_t_plus_1"])
+
+    def __eq__(self, other):
+        if hash(self) == hash(other):
+            return True
+        return False
+
+    def __hash__(self):
+        return hash((tuple(self.state_features_t), self.action, self.reward, tuple(self.state_features_t_plus_1)))
+
+    def as_dict(self):
+        return {
+            "state_features_t": self.state_features_t,
+            "action": self.action,
+            "reward": self.reward,
+            "state_features_t_plus_1": self.state_features_t_plus_1
+        }
