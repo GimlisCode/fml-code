@@ -32,7 +32,9 @@ def setup(self):
             print("Loaded")
     except (EOFError, FileNotFoundError):
         # self.Q = np.ones((11, 4, 4, 4, 4, 4, 4, 16, 6)) * 3
-        self.Q = np.ones((11, 4, 4, 4, 4, 16, 6)) * 3
+        # self.Q = np.ones((11, 4, 4, 4, 4, 16, 6)) * 3
+        # self.Q = np.ones((16, 4, 4, 6, 2, 16, 4, 4, 6)) * 3
+        self.Q = np.ones((16, 4, 4, 4, 4, 16, 2, 6)) * 3
 
 
 def act(self, game_state: dict) -> str:
@@ -46,7 +48,7 @@ def act(self, game_state: dict) -> str:
     """
     current_round = game_state["round"]
 
-    random_prob = max(.5**(1 + current_round / 400), 0.01)
+    random_prob = max(.5**(1 + current_round / 20), 0.01)
     if self.train and random.random() < random_prob:
         self.logger.debug("Choosing action purely at random.")
         return np.random.choice(ACTIONS)
@@ -165,29 +167,29 @@ def get_idx_for_state(game_state: dict):
     MAX_X = COLS - 2
     MAX_Y = ROWS - 2
 
-    if our_position[0] == 1 and our_position[1] == 1:
-        pos_idx = Position.TOP_LEFT_CORNER
-    elif our_position[0] == MAX_X and our_position[1] == 1:
-        pos_idx = Position.TOP_RIGHT_CORNER
-    elif our_position[0] == 1 and our_position[1] == MAX_Y:
-        pos_idx = Position.BOTTOM_LEFT_CORNER
-    elif our_position[0] == MAX_X and our_position[1] == MAX_Y:
-        pos_idx = Position.BOTTOM_RIGHT_CORNER
-    elif our_position[0] % 2 == 0:
-        pos_idx = Position.VERTICAL_BLOCKS
-    elif our_position[1] % 2 == 0:
-        pos_idx = Position.HORIZONTAL_BLOCKS
-    elif our_position[0] == 1:
-        pos_idx = Position.LEFT_EDGE
-    elif our_position[0] == MAX_X:
-        pos_idx = Position.RIGHT_EDGE
-    elif our_position[1] == 1:
-        pos_idx = Position.TOP_EDGE
-    elif our_position[1] == MAX_Y:
-        pos_idx = Position.BOTTOM_EDGE
-    else:
-        # no blocks in our possible moving directions
-        pos_idx = Position.NO_BLOCKS_AROUND
+    # if our_position[0] == 1 and our_position[1] == 1:
+    #     pos_idx = Position.TOP_LEFT_CORNER
+    # elif our_position[0] == MAX_X and our_position[1] == 1:
+    #     pos_idx = Position.TOP_RIGHT_CORNER
+    # elif our_position[0] == 1 and our_position[1] == MAX_Y:
+    #     pos_idx = Position.BOTTOM_LEFT_CORNER
+    # elif our_position[0] == MAX_X and our_position[1] == MAX_Y:
+    #     pos_idx = Position.BOTTOM_RIGHT_CORNER
+    # elif our_position[0] % 2 == 0:
+    #     pos_idx = Position.VERTICAL_BLOCKS
+    # elif our_position[1] % 2 == 0:
+    #     pos_idx = Position.HORIZONTAL_BLOCKS
+    # elif our_position[0] == 1:
+    #     pos_idx = Position.LEFT_EDGE
+    # elif our_position[0] == MAX_X:
+    #     pos_idx = Position.RIGHT_EDGE
+    # elif our_position[1] == 1:
+    #     pos_idx = Position.TOP_EDGE
+    # elif our_position[1] == MAX_Y:
+    #     pos_idx = Position.BOTTOM_EDGE
+    # else:
+    #     # no blocks in our possible moving directions
+    #     pos_idx = Position.NO_BLOCKS_AROUND
 
     # coin_dist_x_idx, coin_dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))[0]
 
@@ -199,9 +201,82 @@ def get_idx_for_state(game_state: dict):
 
     expl_idx = get_explosion_indices(our_position, game_state["explosion_map"])
 
-    # return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0], expl_idx
-    return pos_idx, *crate_indices[0], *bomb_indices[0], expl_idx
+    in_bomb_range = 1 if is_in_bomb_range(our_position, bomb_positions) else 0
+    # neighbor_in_bomb_range_idx = get_dangerous_neighbor_indices(our_position, bomb_positions)
 
+    # neighbor_in_danger_index = get_dangerous_neighbor_index(game_state)
+
+    # direction_with_most_crates = find_direction_to_increase_crates_destroyed(game_state)
+    movement_idx = get_movement_indices(game_state)
+
+    # return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0], expl_idx
+    # return movement_idx, *crate_indices[0], direction_with_most_crates, in_bomb_range, neighbor_in_danger_index, *bomb_indices[0]
+    # return movement_idx, *crate_indices[0], in_bomb_range, neighbor_in_danger_index, *bomb_indices[0]
+    return movement_idx, *crate_indices[0], *bomb_indices[0], expl_idx, in_bomb_range
+
+
+def is_next_to_crate(agent_position, crate_positions):
+    col = agent_position[0]
+    row = agent_position[1]
+
+    top_pos = (col, row - 1)
+    right_pos = (col + 1, row)
+    bottom_pos = (col, row + 1)
+    left_pos = (col - 1, row)
+
+    return top_pos in crate_positions.tolist() or right_pos in crate_positions.tolist() or bottom_pos in crate_positions.tolist() or left_pos in crate_positions.tolist()
+
+
+def is_in_bomb_range(agent_position, bomb_positions):
+    return len(bomb_positions) > 0 and len(objects_in_bomb_dist(agent_position, bomb_positions)) > 0
+
+
+def find_direction_to_increase_crates_destroyed(game_state):
+    agent_position = game_state["self"][3]
+    crate_positions = extract_crate_positions(game_state["field"])
+    crate_positions_list = crate_positions.tolist()
+
+    col = agent_position[0]
+    row = agent_position[1]
+    top_idx = 0
+    right_idx = 1
+    bottom_idx = 2
+    left_idx = 3
+    current_score = 0
+    scores = np.array([0, 0, 0, 0])
+
+    top_pos = (col, row - 1)
+    right_pos = (col + 1, row)
+    bottom_pos = (col, row + 1)
+    left_pos = (col - 1, row)
+
+    if not has_vertical_blocks(agent_position):
+        if row != 1 and top_pos not in crate_positions_list:
+            # go top
+            scores[top_idx] = len(objects_in_bomb_dist(top_pos, crate_positions))
+        if row != ROWS-2 and bottom_pos not in crate_positions_list:
+            # go bottom
+            scores[bottom_idx] = len(objects_in_bomb_dist((col, row+1), crate_positions))
+    if not has_horizontal_blocks(agent_position):
+        if col != 1 and left_pos not in crate_positions_list:
+            # go left
+            scores[left_idx] = len(objects_in_bomb_dist((col-1, row), crate_positions))
+        if col != COLS-2 and right_pos not in crate_positions_list:
+            # go right
+            scores[right_idx] = len(objects_in_bomb_dist((col+1, row), crate_positions))
+
+    current_score = len(objects_in_bomb_dist(agent_position, crate_positions))
+    if np.amax(scores) > current_score:
+        return np.argmax(scores)
+    return 5
+
+
+def has_vertical_blocks(agent_position):
+    return agent_position[0] % 2 == 0
+
+
+def has_horizontal_blocks(agent_position):
+    return agent_position[1] % 2 == 0
 
 # def are_objects_in_sight(agent_position, object_positions):
 #     obj_dist_x_y = object_positions - agent_position
@@ -242,3 +317,65 @@ def get_explosion_indices(agent_position, explosion_map):
     bottom = 8 if explosion_map[x, y + 1] != 0 else 0
 
     return left & right & top & bottom
+
+
+def get_dangerous_neighbor_index(game_state):
+    agent_position = game_state["self"][3]
+    explosion_map = game_state["explosion_map"]
+    bomb_positions = np.array([coordinates for coordinates, _ in game_state["bombs"]])
+
+    col = agent_position[0]
+    row = agent_position[1]
+    # top_left_pos = (col-1, row-1)
+    top_pos = (col, row - 1)
+    # top_right_pos = (col+1, row-1)
+    right_pos = (col + 1, row)
+    # bottom_left_pos = (col-1, row+1)
+    bottom_pos = (col, row + 1)
+    # bottom_right_pos = (col+1, row+1)
+    left_pos = (col - 1, row)
+
+    top = 1 if explosion_map[top_pos] or is_in_bomb_range(top_pos, bomb_positions) else 0
+    bottom = 2 if explosion_map[bottom_pos] or is_in_bomb_range(bottom_pos, bomb_positions) else 0
+    left = 4 if explosion_map[left_pos] or is_in_bomb_range(left_pos, bomb_positions) else 0
+    right = 8 if explosion_map[right_pos] or is_in_bomb_range(right_pos, bomb_positions) else 0
+    # top_left_pos = 16 if explosion_map[top_left_pos] or is_in_bomb_range(top_left_pos, bomb_positions) else 0
+    # top_right_pos = 24 if explosion_map[top_right_pos] or is_in_bomb_range(top_right_pos, bomb_positions) else 0
+    # bottom_left_pos = 56 if explosion_map[bottom_left_pos] or is_in_bomb_range(bottom_left_pos, bomb_positions) else 0
+    # bottom_right_pos = 128 if explosion_map[bottom_right_pos] or is_in_bomb_range(bottom_right_pos, bomb_positions) else 0
+
+    return left & right & top & bottom # & top_left_pos & top_right_pos & bottom_left_pos & bottom_right_pos
+
+
+def get_movement_indices(game_state):
+    agent_position = game_state["self"][3]
+    crate_positions = extract_crate_positions(game_state["field"]).tolist()
+
+    col = agent_position[0]
+    row = agent_position[1]
+    top_pos = (col, row - 1)
+    right_pos = (col + 1, row)
+    bottom_pos = (col, row + 1)
+    left_pos = (col - 1, row)
+
+    top = 0
+    right = 0
+    bottom = 0
+    left = 0
+
+    if not has_vertical_blocks(agent_position):
+        if row != 1 and top_pos not in crate_positions:
+            # go top
+            top = 1
+        if row != ROWS - 2 and bottom_pos not in crate_positions:
+            # go bottom
+            bottom = 2
+    if not has_horizontal_blocks(agent_position):
+        if col != 1 and left_pos not in crate_positions:
+            # go left
+            left = 4
+        if col != COLS - 2 and right_pos not in crate_positions:
+            # go right
+            right = 8
+    return left & right & top & bottom
+
