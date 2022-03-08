@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 
 
 class QNetwork(pl.LightningModule):
-    def __init__(self, features_out: int, gamma: float = 0.9, learning_rate: Optional[float] = 0.0001):
+    def __init__(self, features_out: int, gamma: float = 0.5, learning_rate: Optional[float] = 0.0001):
         super().__init__()
 
         self.conv_layers = torch.nn.Sequential(
@@ -30,6 +30,7 @@ class QNetwork(pl.LightningModule):
             torch.nn.ReLU(),
             torch.nn.BatchNorm1d(264),
             torch.nn.Linear(264, features_out),
+            torch.nn.Softmax(-1)
             # torch.nn.ReLU()
         )
 
@@ -49,6 +50,7 @@ class QNetwork(pl.LightningModule):
 
     def td_loss(self, y_t, action, reward, y_t_plus_1) -> torch.tensor:
         td_target = self.gamma * torch.max(y_t_plus_1, dim=1, keepdim=True)[0] + reward
+        td_target = torch.clip(td_target, min=0, max=1)
         # return torch.mean(torch.square(self.gamma * torch.max(y_t_plus_1, dim=1, keepdim=True)[0] + reward - y_t[:, action]))
         return F.smooth_l1_loss(y_t[:, action], td_target)
 

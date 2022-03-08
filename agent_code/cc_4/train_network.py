@@ -44,11 +44,11 @@ def train(network: QNetwork, data_path, device, num_of_epochs: int = 25, save_to
 
 
 if __name__ == '__main__':
-    Q = QNetwork(features_out=4, learning_rate=0.001)
+    Q = QNetwork(features_out=4, learning_rate=0.0001)
     data_path = "../cc_1/train_data"
     device = torch.device('cpu')
 
-    loss = train(Q, data_path, device)
+    loss = train(Q, data_path, device, num_of_epochs=100)
 
     with open("./loss.json", "w") as f:
         f.write(json.dumps({"loss": loss}))

@@ -70,7 +70,10 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
     self.Q[state_idx_t][action_idx_t] += self.alpha * (reward + self.gamma * np.max(self.Q[state_idx_t1]) - self.Q[state_idx_t][action_idx_t])
 
-    train_element_meta_info = TrainDataPoint(state_idx_t, action_idx_t, reward, state_idx_t1)
+    features_t = get_idx_for_state(old_game_state)
+    features_t1 = get_idx_for_state(new_game_state)
+
+    train_element_meta_info = TrainDataPoint(features_t, action_idx_t, reward, features_t1)
 
     if train_element_meta_info not in self.meta_info:
         old_game_state_img = map_game_state_to_image(old_game_state)
@@ -112,7 +115,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
     game_rewards = {
-        e.COIN_COLLECTED: 5,
+        e.COIN_COLLECTED: 10,
         e.INVALID_ACTION: -10
 
     }
@@ -125,8 +128,8 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     current_min_dist = np.min(get_steps_between(np.array(new_game_state["self"][3]), np.array(new_game_state["coins"])))
 
     if current_min_dist < previous_min_dist:
-        reward_sum += 3
-    else:
+        reward_sum += 5
+    elif e.COIN_COLLECTED not in events and e.INVALID_ACTION not in events:
         reward_sum -= 5
 
     return reward_sum

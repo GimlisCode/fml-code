@@ -31,4 +31,6 @@ class GameStateDataset(Dataset):
 
         _, action, reward = filename.name.replace(".tif", "").split("_")
 
-        return state_t, int(action), int(reward), state_t_1
+        reward = int(reward) / 10  # rewards between -1 and 1
+
+        return state_t, int(action), reward, state_t_1

@@ -176,6 +176,14 @@ def get_distance_indices(distances):
     return result
 
 
+def get_features_for_state(game_state: dict):
+    our_position = game_state["self"][3]
+
+    dist_x_idx, dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))[0]
+
+    return *our_position, int(dist_x_idx), int(dist_y_idx)
+
+
 class TrainDataPoint:
     def __init__(self, state_features_t, action, reward, state_features_t_plus_1):
         self.state_features_t = state_features_t
