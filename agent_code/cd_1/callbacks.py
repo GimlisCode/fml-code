@@ -51,10 +51,16 @@ def act(self, game_state: dict) -> str:
     random_prob = max(.5**(1 + current_round / 20), 0.01)
     if self.train and random.random() < random_prob:
         self.logger.debug("Choosing action purely at random.")
-        return np.random.choice(ACTIONS)
+        action = np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
+        if action == "BOMB" and is_in_corner(game_state["self"][3]):
+            action = np.random.choice(ACTIONS, p=[.25, .25, .25, .25, 0, 0])
+        return action
 
     self.logger.debug("Querying model for action.")
-    return ACTIONS[np.argmax(self.Q[get_idx_for_state(game_state)])]
+    action = ACTIONS[np.argmax(self.Q[get_idx_for_state(game_state)])]
+    if action == "BOMB" and is_in_corner(game_state["self"][3]):
+        action = np.random.choice(ACTIONS, p=[.25, .25, .25, .25, 0, 0])
+    return action
 
 
 def get_steps_between(agent_position, object_positions) -> np.ndarray:
@@ -157,6 +163,10 @@ class Position:
     TOP_EDGE = 8
     BOTTOM_EDGE = 9
     NO_BLOCKS_AROUND = 10
+
+
+def is_in_corner(agent_position):
+    return agent_position[0] == 1 and agent_position[1] == 1 or agent_position[0] == COLS-2 and agent_position[1] == 1 or agent_position[0] == 1 and agent_position[1] == ROWS-2 or agent_position[0] == COLS-2 and agent_position[1] == ROWS-2
 
 
 def get_idx_for_state(game_state: dict):
