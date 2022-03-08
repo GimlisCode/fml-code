@@ -1,7 +1,8 @@
 from collections import namedtuple, deque
 
-from typing import List
+from typing import List, Tuple
 
+import numpy as np
 import matplotlib.pyplot as plt
 
 import events as e
@@ -97,7 +98,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     self.Q[idx_t][action_idx_t] += self.alpha * (-100 - self.Q[idx_t][action_idx_t])
 
 
-def calculate_reward(events, old_game_state, new_game_state) -> int:
+def calculate_reward_old(events, old_game_state, new_game_state) -> int:
     game_rewards = {
         e.MOVED_LEFT: 1,
         e.MOVED_RIGHT: 1,
@@ -151,6 +152,73 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
             else:
                 # did not move closer to crate
                 reward_sum -= 10
+
+    return reward_sum
+
+
+def calculate_reward(events, old_game_state, new_game_state) -> int:
+    game_rewards = {
+        e.INVALID_ACTION: -15
+    }
+    reward_sum = 0
+    for event in events:
+        if event in game_rewards:
+            reward_sum += game_rewards[event]
+
+    previous_agent_position = np.array(old_game_state["self"][3])
+    current_agent_position = np.array(new_game_state["self"][3])
+
+    previous_bomb_positions = np.array([coords for coords, _ in old_game_state["bombs"]])
+    current_bomb_positions = np.array([coords for coords, _ in new_game_state["bombs"]])
+
+    previous_crate_positions = extract_crate_positions(old_game_state["field"])
+    current_crate_positions = extract_crate_positions(new_game_state["field"])
+
+    if len(previous_bomb_positions) == 0 and e.WAITED in events:
+        reward_sum -= 5
+
+    if e.BOMB_DROPPED in events:
+        if min(get_steps_between(previous_agent_position, previous_crate_positions)) == 1:
+            reward_sum += 15
+        else:
+            reward_sum -= 15
+    elif len(current_bomb_positions) > 0:
+        # there were and are bombs -> objective: move to safe place
+        ret = find_next_secure_field(old_game_state)
+
+        if ret is None:
+            reward_sum -= 20
+        else:
+            _, _, previous_steps_to_secure_field = ret
+
+            ret = find_next_secure_field(new_game_state)
+
+            if ret is None:
+                reward_sum -= 20
+            else:
+                _, _, current_steps_to_secure_field = ret
+
+                if current_steps_to_secure_field < previous_steps_to_secure_field:
+                    if current_steps_to_secure_field == 0:
+                        reward_sum += 25
+                    else:
+                        reward_sum += 25
+                elif current_steps_to_secure_field > previous_steps_to_secure_field:
+                    reward_sum -= 20
+                elif current_steps_to_secure_field == 0:
+                    pass
+                else:
+                    reward_sum -= 15
+
+    if len(current_bomb_positions) == 0:
+        # there were and are no bombs -> objective: move closer to crate
+        if min(get_steps_between(previous_agent_position, previous_crate_positions)) > min(
+                get_steps_between(current_agent_position, current_crate_positions)):
+            # moved closer to crate -> good
+            reward_sum += 10
+        else:
+            # did not move closer to crate
+            reward_sum -= 10
 
     return reward_sum
 
