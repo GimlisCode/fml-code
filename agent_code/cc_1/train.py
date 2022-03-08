@@ -110,7 +110,7 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
 
     if current_min_dist < previous_min_dist:
         reward_sum += 3
-    else:
+    elif e.COIN_COLLECTED not in events and e.INVALID_ACTION not in events:
         reward_sum -= 5
 
     return reward_sum
