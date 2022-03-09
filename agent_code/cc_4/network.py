@@ -14,22 +14,25 @@ class QNetwork(pl.LightningModule):
             torch.nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
             torch.nn.ReLU(),
             torch.nn.BatchNorm2d(4),
-            torch.nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
+            # torch.nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
+            # torch.nn.ReLU(),
+            # torch.nn.BatchNorm2d(4),
+            torch.nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),  # 9x9
             torch.nn.ReLU(),
-            torch.nn.BatchNorm2d(8),
-            torch.nn.Conv2d(in_channels=8, out_channels=16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),  # 9x9
+            torch.nn.BatchNorm2d(4),
+            torch.nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 9x9
             torch.nn.ReLU(),
-            torch.nn.BatchNorm2d(16),
-            torch.nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 9x9
-            torch.nn.ReLU(),
-            torch.nn.BatchNorm2d(16),
+            torch.nn.BatchNorm2d(4),
         )
 
         self.linear_layers = torch.nn.Sequential(
-            torch.nn.Linear(16 * 9 * 9, 264),
+            torch.nn.Linear(4 * 9 * 9, 128),
             torch.nn.ReLU(),
-            torch.nn.BatchNorm1d(264),
-            torch.nn.Linear(264, features_out),
+            torch.nn.BatchNorm1d(128),
+            torch.nn.Linear(128, 64),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm1d(64),
+            torch.nn.Linear(64, features_out),
             torch.nn.Softmax(-1)
             # torch.nn.ReLU()
         )
@@ -40,12 +43,12 @@ class QNetwork(pl.LightningModule):
         self.double()
 
     def forward(self, x: torch.tensor) -> torch.tensor:
-        return self.linear_layers.forward(self.conv_layers.forward(x).view((-1, 16 * 9 * 9)))
+        return self.linear_layers.forward(self.conv_layers.forward(x).view((-1, 4 * 9 * 9)))
 
     def configure_optimizers(self):
         # optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
-        # optimizer = torch.optim.RMSprop(self.parameters(), lr=self.learning_rate, momentum=0.9, weight_decay=0.0001, eps=0.001)
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.RMSprop(self.parameters(), lr=self.learning_rate, momentum=0.9, weight_decay=0.0001, eps=0.001)
+        # optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
 
     def td_loss(self, y_t, action, reward, y_t_plus_1) -> torch.tensor:
