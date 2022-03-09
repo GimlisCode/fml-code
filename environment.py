@@ -333,7 +333,7 @@ class GenericWorld:
 class BombeRLeWorld(GenericWorld):
     def __init__(self, args: WorldArgs, agents):
         super().__init__(args)
-
+        self.nEpisode = 0
         self.setup_agents(agents)
 
     def setup_agents(self, agents):
@@ -493,7 +493,11 @@ class BombeRLeWorld(GenericWorld):
         # Send final event to agents that expect them
         for a in self.agents:
             if a.train:
-                a.round_ended()
+                if self.nEpisode == 20:
+                    a.round_ended()
+                    self.nEpisode = 0
+                else:
+                    self.nEpisode += 1
 
         # Save course of the game for future replay
         if self.args.save_replay:

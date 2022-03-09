@@ -93,10 +93,10 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     # plt.imshow(np.reshape(self.Q, (9 * 27, 4)))
     # plt.show()
 
-    idx_t = get_idx_for_state(last_game_state)
-    action_idx_t = get_idx_for_action(last_action)
-
-    self.Q[idx_t][action_idx_t] += self.alpha * (-100 - self.Q[idx_t][action_idx_t])
+    # idx_t = get_idx_for_state(last_game_state)
+    # action_idx_t = get_idx_for_action(last_action)
+    #
+    # self.Q[idx_t][action_idx_t] += self.alpha * (-100 - self.Q[idx_t][action_idx_t])
 
 
 def calculate_reward_old(events, old_game_state, new_game_state) -> int:
