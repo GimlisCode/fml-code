@@ -1,4 +1,5 @@
 from pathlib import Path
+from random import shuffle
 
 import tifffile
 from torch.utils.data import Dataset
@@ -11,6 +12,20 @@ class GameStateDataset(Dataset):
         self.data_path = Path(data_path)
 
         self.data = list(self.data_path.glob("*.tif"))
+
+        reward_10_data = [f for f in self.data if f.name.endswith("_10.tif")]
+        reward_5_data = [f for f in self.data if f.name.endswith("_5.tif")]
+        reward_minus_5_data = [f for f in self.data if f.name.endswith("_-5.tif")]
+        reward_minus_10_data = [f for f in self.data if f.name.endswith("_-10.tif")]
+
+        shuffle(reward_10_data)
+        shuffle(reward_5_data)
+        shuffle(reward_minus_5_data)
+        shuffle(reward_minus_10_data)
+
+        min_len = min(len(reward_10_data), len(reward_5_data), len(reward_minus_5_data), len(reward_minus_10_data))
+
+        self.data = reward_10_data[:min_len] + reward_5_data[:min_len] + reward_minus_5_data[:min_len] + reward_minus_10_data[:min_len]
 
     def __len__(self) -> int:
         return len(self.data)

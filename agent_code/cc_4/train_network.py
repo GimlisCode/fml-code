@@ -53,7 +53,7 @@ if __name__ == '__main__':
     data_path = "../cc_train_data_collector_1/train_data"
     device = torch.device('cpu')
 
-    loss = train(Q, data_path, device, num_of_epochs=25)
+    loss = train(Q, data_path, device, num_of_epochs=15)
 
     with open("./loss.json", "w") as f:
         f.write(json.dumps({"loss": loss}))
