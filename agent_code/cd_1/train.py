@@ -1,9 +1,7 @@
 from collections import namedtuple, deque
 
-from typing import List, Tuple
+from typing import List
 
-import numpy as np
-import matplotlib.pyplot as plt
 
 import events as e
 from .callbacks import *
@@ -85,18 +83,15 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     self.logger.debug(f'Encountered event(s) {", ".join(map(repr, events))} in final step')
     # self.transitions.append(Transition(state_to_features(last_game_state), last_action, None, calculate_reward(events)))
 
-    # Store the model
-    with open("model.pt", "wb") as file:
-        pickle.dump(self.Q, file)
-
-    # plt.gray()
-    # plt.imshow(np.reshape(self.Q, (9 * 27, 4)))
-    # plt.show()
-
     idx_t = get_idx_for_state(last_game_state)
     action_idx_t = get_idx_for_action(last_action)
 
-    self.Q[idx_t][action_idx_t] += self.alpha * (-100 - self.Q[idx_t][action_idx_t])
+    if e.KILLED_SELF in events:
+        self.Q[idx_t][action_idx_t] += self.alpha * (-100 - self.Q[idx_t][action_idx_t])
+
+    # Store the model
+    with open("model.pt", "wb") as file:
+        pickle.dump(self.Q, file)
 
 
 def calculate_reward_old(events, old_game_state, new_game_state) -> int:
