@@ -2,6 +2,7 @@ import json
 
 from torch.utils.data import DataLoader
 import torch
+import numpy as np
 
 from agent_code.cc_4.dataset import GameStateDataset
 from agent_code.cc_4.network import QNetwork
@@ -19,6 +20,9 @@ def train(network: QNetwork, data_path, device, num_of_epochs: int = 25, save_to
 
     for epoch in range(num_of_epochs):
         print(epoch)
+
+        epoch_loss = list()
+
         for i, data in enumerate(train_loader):
             state_features_t, action, reward, state_features_t_plus_1 = data[0].to(device), \
                                                                         data[1].to(device), \
@@ -34,7 +38,9 @@ def train(network: QNetwork, data_path, device, num_of_epochs: int = 25, save_to
             loss.backward()
             optimizer.step()
 
-            running_loss.append(loss.item())
+            epoch_loss.append(loss.item())
+
+        running_loss.append(np.mean(epoch_loss))
 
     network.eval()
 
@@ -48,7 +54,7 @@ if __name__ == '__main__':
     data_path = "../cc_1/train_data"
     device = torch.device('cpu')
 
-    loss = train(Q, data_path, device, num_of_epochs=100)
+    loss = train(Q, data_path, device, num_of_epochs=50)
 
     with open("./loss.json", "w") as f:
         f.write(json.dumps({"loss": loss}))
