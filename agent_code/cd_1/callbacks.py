@@ -34,7 +34,7 @@ def setup(self):
         # self.Q = np.ones((11, 4, 4, 4, 4, 16, 6)) * 3
         # self.Q = np.ones((16, 4, 4, 6, 2, 16, 4, 4, 6)) * 3
         # self.Q = np.ones((16, 4, 4, 4, 4, 16, 2, 6)) * 3
-        self.Q = np.ones((16, 6, 2, 6, 6)) * 3
+        self.Q = np.ones((16, 6, 2, 6, 5, 6)) * 3
 
 
 def act(self, game_state: dict) -> str:
@@ -57,7 +57,7 @@ def act(self, game_state: dict) -> str:
     self.logger.debug("Querying model for action.")
     action = ACTIONS[np.argmax(self.Q[get_idx_for_state(game_state)])]
     if action == "BOMB" and is_in_corner(game_state["self"][3]):
-        action = np.random.choice(ACTIONS, p=[.25, .25, .25, .25, 0, 0])
+        action = np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .2, 0])
 
     return action
 
@@ -172,6 +172,9 @@ def get_idx_for_state(game_state: dict):
     our_position = np.array(game_state["self"][3])
     crate_positions = extract_crate_positions(game_state["field"])
     bomb_positions = np.array([coords for coords, _ in game_state["bombs"]])
+    coin_positions = game_state["coins"]
+
+    game_state['field'].T
 
     map = map_game_state_to_image(game_state)
 
@@ -180,9 +183,9 @@ def get_idx_for_state(game_state: dict):
 
     # coin_dist_x_idx, coin_dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))[0]
 
-    nearest_crates = get_k_nearest_object_positions(our_position, crate_positions, k=1)
-    crate_indices = get_distance_indices(nearest_crates - our_position)
-    is_crate_direct_neighbour = 1 if is_next_to_crate(our_position, crate_positions) else 0
+    # nearest_crates = get_k_nearest_object_positions(our_position, crate_positions, k=1)
+    # crate_indices = get_distance_indices(nearest_crates - our_position)
+    # is_crate_direct_neighbour = 1 if is_next_to_crate(our_position, crate_positions) else 0
 
 
     # nearest_bombs = get_k_nearest_bombs(our_position, bomb_positions, k=1)
@@ -198,25 +201,36 @@ def get_idx_for_state(game_state: dict):
     # direction_with_most_crates = find_direction_to_increase_crates_destroyed(game_state)
     movement_idx = get_movement_indices(our_position, map)
 
-    ret_safe_fields = find_next_secure_field(map, our_position)
+    ret_safe_fields = find_next_safe_field(map, our_position)
     if ret_safe_fields is None:
         safe_field_direction_idx = 5
     else:
-        _, safe_field_direction_idx, _ = ret_safe_fields
+        safe_field_direction_idx, _ = ret_safe_fields
 
-    bomb_on_map_idx = 1 if len(bomb_positions) > 0 else 0
+    can_drop_bomb_idx = 1 if can_drop_bomb(bomb_positions, game_state["explosion_map"]) else 0
+    # 1 -
 
     ret_crates = find_next_crate(map, our_position, crate_positions)
     if ret_crates is None:
         crate_direction_idx = 5
     else:
-        _, crate_direction_idx, _ = ret_crates
+        crate_direction_idx, _ = ret_crates
+
+    ret_coins = find_next_coin(map, our_position, coin_positions)
+    if ret_coins is None:
+        coin_direction_idx = 0
+    else:
+        coin_direction_idx, _ = ret_coins
 
     # return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0], expl_idx
     # return movement_idx, *crate_indices[0], direction_with_most_crates, in_bomb_range, neighbor_in_danger_index, *bomb_indices[0]
     # return movement_idx, *crate_indices[0], in_bomb_range, neighbor_in_danger_index, *bomb_indices[0]
     # return movement_idx, *crate_indices[0], is_crate_direct_neighbour, next_step_direction_idx, bomb_on_map_idx, next_step_crate_direction_idx
-    return movement_idx, safe_field_direction_idx, bomb_on_map_idx, crate_direction_idx
+    return movement_idx, safe_field_direction_idx, can_drop_bomb_idx, crate_direction_idx, coin_direction_idx
+
+
+def can_drop_bomb(bomb_positions, explosion_map):
+    return not (len(bomb_positions) > 0 or np.any(explosion_map != 0))
 
 
 def is_next_to_crate(agent_position, crate_positions):
@@ -369,7 +383,8 @@ def get_movement_indices(agent_position, map):
 
 
 def map_game_state_to_image(game_state):
-    field = game_state["field"]  # 0: free tiles, 1: crates, -1: stone walls
+    # map_game_state_to_image(game_state):
+    field = (game_state["field"]).copy()  # 0: free tiles, 1: crates, -1: stone walls
     field[field == -1] = 1  # stone walls
 
     field[game_state["explosion_map"] > 1] = 1  # explosions
@@ -389,9 +404,9 @@ def map_game_state_to_image(game_state):
     return field  # 0: secure, 1: not passable, 2+: passable, but there will be an explosion in the future
 
 
-def find_next_secure_field(map, agent_position) -> Optional[Tuple[Tuple[int, int], int, int]]:
+def find_next_safe_field(map, agent_position) -> Optional[Tuple[int, int]]:
     """
-    Returns: position, next_step_direction, needed_steps
+    Returns: next_step_direction, needed_steps
     """
     # TODO: currently assuming, that we have only one bomb.
     #  With more we have to take the different countdowns into account
@@ -403,19 +418,20 @@ def find_next_secure_field(map, agent_position) -> Optional[Tuple[Tuple[int, int
     reachable_within_3_steps = secure_fields[steps <= 3]
     steps = steps[steps <= 3]
 
-    sorted_indices = np.argpartition(steps, kth=len(steps) - 1)
+    sorted_indices = np.argsort(steps)
+    # sorted_indices = np.argpartition(steps, kth=len(steps) - 1)
 
     for idx in sorted_indices:
         is_reachable, next_step_direction, needed_steps = reachable(map, reachable_within_3_steps[idx], agent_position)
         if is_reachable:
-            return reachable_within_3_steps[idx], next_step_direction, needed_steps
+            return next_step_direction, needed_steps
 
     return None
 
 
-def find_next_crate(map, agent_position, crate_positions) -> Optional[Tuple[Tuple[int, int], int, int]]:
+def find_next_crate(map, agent_position, crate_positions) -> Optional[Tuple[int, int]]:
     """
-    Returns: position, next_step_direction, needed_steps
+    Returns: next_step_direction, needed_steps
     """
 
     if not len(crate_positions):
@@ -423,17 +439,38 @@ def find_next_crate(map, agent_position, crate_positions) -> Optional[Tuple[Tupl
 
     steps = get_steps_between(agent_position, crate_positions)
 
-    sorted_indices = np.argpartition(steps, kth=len(steps) - 1)
+    sorted_indices = np.argsort(steps)
+    # sorted_indices = np.argpartition(steps, kth=len(steps) - 1)
 
     if steps[sorted_indices[0]] == 1:
-        return crate_positions[sorted_indices[0]], 0, 0
+        return 0, 0
 
     for idx in sorted_indices:
         map[crate_positions[idx]] = 0
         is_reachable, next_step_direction, needed_steps = reachable(map, crate_positions[idx], agent_position, limit=30)
         if is_reachable:
-            return crate_positions[idx], next_step_direction, needed_steps-1
+            return next_step_direction, needed_steps-1
         map[crate_positions[idx]] = 1
+    return None
+
+
+def find_next_coin(map, agent_position, coin_positions) -> Optional[Tuple[int, int]]:
+    """
+    Returns: next_step_direction, needed_steps
+    """
+
+    if not len(coin_positions):
+        return None
+
+    steps = get_steps_between(agent_position, coin_positions)
+
+    sorted_indices = np.argsort(steps)
+    # sorted_indices = np.argpartition(steps, kth=len(steps) - 1)
+
+    for idx in sorted_indices:
+        is_reachable, next_step_direction, needed_steps = reachable(map, coin_positions[idx], agent_position, limit=30)
+        if is_reachable:
+            return next_step_direction, needed_steps
     return None
 
 

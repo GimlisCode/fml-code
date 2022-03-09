@@ -94,67 +94,68 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
         pickle.dump(self.Q, file)
 
 
-def calculate_reward_old(events, old_game_state, new_game_state) -> int:
-    game_rewards = {
-        e.MOVED_LEFT: 1,
-        e.MOVED_RIGHT: 1,
-        e.MOVED_UP: 1,
-        e.MOVED_DOWN: 1,
-        e.WAITED: -1,
-        e.INVALID_ACTION: -15
-    }
-    reward_sum = 0
-    for event in events:
-        if event in game_rewards:
-            reward_sum += game_rewards[event]
-
-    previous_agent_position = np.array(old_game_state["self"][3])
-    current_agent_position = np.array(new_game_state["self"][3])
-
-    previous_bomb_positions = np.array([coords for coords, _ in old_game_state["bombs"]])
-    current_bomb_positions = np.array([coords for coords, _ in new_game_state["bombs"]])
-
-    previous_crate_positions = extract_crate_positions(old_game_state["field"])
-    current_crate_positions = extract_crate_positions(new_game_state["field"])
-
-    if e.BOMB_DROPPED in events:
-        if min(get_steps_between(previous_agent_position, previous_crate_positions)) == 1:
-            reward_sum += 15
-        else:
-            reward_sum -= 15
-    else:
-        if len(current_bomb_positions):
-            # there were and are bombs -> objective: dodge bombs
-            if not is_in_bomb_range(current_agent_position, current_bomb_positions):
-                # is not in range -> good
-                reward_sum += 10
-            elif is_in_bomb_range(previous_agent_position, previous_bomb_positions) and min(
-                    get_steps_between(previous_agent_position, previous_bomb_positions)) < min(
-                get_steps_between(current_agent_position, current_bomb_positions)):
-                # was in range and still is, but distance to bomb increased -> good
-                reward_sum += 10
-            else:
-                # is in range and was not before/distance did not increase -> bad
-                reward_sum -= 10
-        # elif len(previous_bomb_positions):
-        #     # there were bombs, but they did explode and agent survived --> good
-        #     reward_sum += 10
-        elif not len(previous_bomb_positions):
-            # there were and are no bombs -> objective: move closer to crate
-            if min(get_steps_between(previous_agent_position, previous_crate_positions)) > min(
-                    get_steps_between(current_agent_position, current_crate_positions)):
-                # moved closer to crate -> good
-                reward_sum += 10
-            else:
-                # did not move closer to crate
-                reward_sum -= 10
-
-    return reward_sum
+# def calculate_reward_old(events, old_game_state, new_game_state) -> int:
+#     game_rewards = {
+#         e.MOVED_LEFT: 1,
+#         e.MOVED_RIGHT: 1,
+#         e.MOVED_UP: 1,
+#         e.MOVED_DOWN: 1,
+#         e.WAITED: -1,
+#         e.INVALID_ACTION: -15
+#     }
+#     reward_sum = 0
+#     for event in events:
+#         if event in game_rewards:
+#             reward_sum += game_rewards[event]
+#
+#     previous_agent_position = np.array(old_game_state["self"][3])
+#     current_agent_position = np.array(new_game_state["self"][3])
+#
+#     previous_bomb_positions = np.array([coords for coords, _ in old_game_state["bombs"]])
+#     current_bomb_positions = np.array([coords for coords, _ in new_game_state["bombs"]])
+#
+#     previous_crate_positions = extract_crate_positions(old_game_state["field"])
+#     current_crate_positions = extract_crate_positions(new_game_state["field"])
+#
+#     if e.BOMB_DROPPED in events:
+#         if min(get_steps_between(previous_agent_position, previous_crate_positions)) == 1:
+#             reward_sum += 15
+#         else:
+#             reward_sum -= 15
+#     else:
+#         if len(current_bomb_positions):
+#             # there were and are bombs -> objective: dodge bombs
+#             if not is_in_bomb_range(current_agent_position, current_bomb_positions):
+#                 # is not in range -> good
+#                 reward_sum += 10
+#             elif is_in_bomb_range(previous_agent_position, previous_bomb_positions) and min(
+#                     get_steps_between(previous_agent_position, previous_bomb_positions)) < min(
+#                 get_steps_between(current_agent_position, current_bomb_positions)):
+#                 # was in range and still is, but distance to bomb increased -> good
+#                 reward_sum += 10
+#             else:
+#                 # is in range and was not before/distance did not increase -> bad
+#                 reward_sum -= 10
+#         # elif len(previous_bomb_positions):
+#         #     # there were bombs, but they did explode and agent survived --> good
+#         #     reward_sum += 10
+#         elif not len(previous_bomb_positions):
+#             # there were and are no bombs -> objective: move closer to crate
+#             if min(get_steps_between(previous_agent_position, previous_crate_positions)) > min(
+#                     get_steps_between(current_agent_position, current_crate_positions)):
+#                 # moved closer to crate -> good
+#                 reward_sum += 10
+#             else:
+#                 # did not move closer to crate
+#                 reward_sum -= 10
+#
+#     return reward_sum
 
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
     game_rewards = {
-        e.INVALID_ACTION: -25
+        e.INVALID_ACTION: -50,
+        e.COIN_COLLECTED: 20
     }
     reward_sum = 0
     for event in events:
@@ -170,87 +171,129 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     previous_crate_positions = extract_crate_positions(old_game_state["field"])
     current_crate_positions = extract_crate_positions(new_game_state["field"])
 
-    if len(previous_bomb_positions) == 0 and e.WAITED in events:
-        reward_sum -= 50
+    previous_coin_positions = old_game_state["coins"]
+    current_coin_positions = new_game_state["coins"]
+
+    previous_explosion_map = old_game_state["explosion_map"]
+    current_explosion_map = new_game_state["explosion_map"]
+
+    previous_map = map_game_state_to_image(old_game_state)
+    current_map = map_game_state_to_image(new_game_state)
+
+    # THIS IS ALREADY PUNISHED BY NOT MOVING TOWARDS COIN/CRATE
+    # if not len(previous_bomb_positions) and e.WAITED in events:
+    #     # NO BOMB ON THE FIELD
+    #     reward_sum -= 50
 
     if e.BOMB_DROPPED in events:
-        min_distance_to_next_crate = np.min(get_steps_between(previous_agent_position, previous_crate_positions))
-        if min_distance_to_next_crate == 1:
-            reward_sum += 55
-        # elif len(objects_in_bomb_dist(previous_agent_position, previous_crate_positions)):
-        #     reward_sum += 10
-        else:
-            reward_sum -= 30
-    elif len(current_bomb_positions) > 0:
-        # there were and are bombs -> objective: move to safe place
-        if np.min(get_steps_between(current_agent_position, current_bomb_positions)) == 0:
-            reward_sum -= 10
+        # AGENT DROPPED A BOMB -> CHECK IF THERE ARE CRATES/IF THERE WAS A COIN/IF AGENT WAS NEXT TO CRATE
 
-        previous_map = map_game_state_to_image(old_game_state)
-        current_map = map_game_state_to_image(new_game_state)
+        ret_crate = find_next_crate(previous_map, previous_agent_position, previous_crate_positions)
 
-        ret_safe_fields = find_next_secure_field(previous_map, previous_agent_position)
-
-        if ret_safe_fields is None:
+        if ret_crate is None:
+            # NO CRATE IS ON THE FIELD
             reward_sum -= 20
         else:
-            _, _, previous_steps_to_secure_field = ret_safe_fields
+            # THERE ARE STILL CRATES ON THE FIELD
+            _, previous_steps_to_next_crate = ret_crate
 
-            ret = find_next_secure_field(current_map, current_agent_position)
+            if len(previous_coin_positions):
+                # THERE WAS STILL A COIN ON THE FIELD
+                reward_sum -= 25
+            elif previous_steps_to_next_crate == 0:
+                # AGENT WAS NEXT TO CRATE
+                reward_sum += 25
+            else:
+                # AGENT WAS NOT NEXT TO CRATE
+                reward_sum -= 20
+    elif len(current_bomb_positions) > 0:
+        # THERE WAS AND STILL IS A BOMB -> OBJECTIVE: DODGE BOMB BY MOVING TO SAFE FIELD (OR STAYING THERE)
+        # if np.min(get_steps_between(current_agent_position, current_bomb_positions)) == 0:
+        #     reward_sum -= 10
+
+        ret_safe_fields = find_next_safe_field(previous_map, previous_agent_position)
+
+        if ret_safe_fields is None:
+            # SAFE FIELD WAS NOT REACHABLE
+            reward_sum -= 20
+            # pass
+        else:
+            # SAFE FIELD WAS REACHABLE
+            _, previous_steps_to_secure_field = ret_safe_fields
+
+            ret = find_next_safe_field(current_map, current_agent_position)
 
             if ret is None:
-                reward_sum -= 20
+                # SAFE FIELD IS NOT REACHABLE
+                reward_sum -= 25
             else:
-                _, _, current_steps_to_secure_field = ret
+                # SAFE FIELD IS REACHABLE
+                _, current_steps_to_secure_field = ret
 
                 if current_steps_to_secure_field < previous_steps_to_secure_field:
+                    # AGENT MOVED CLOSER TO SAFE FIELD
                     if current_steps_to_secure_field == 0:
+                        # AGENT IS AT SAFE FIELD
                         reward_sum += 25
                     else:
+                        # AGENT IS NOT YET AT SAFE FIELD
                         reward_sum += 20
                 elif current_steps_to_secure_field > previous_steps_to_secure_field:
+                    # AGENT MOVED AWAY FROM SAFE FIELD
                     reward_sum -= 20
                 elif current_steps_to_secure_field != 0:
+                    # AGENT DID NOT MOVE AND IS NOT AT SAFE FIELD
                     reward_sum -= 15
+    elif not len(current_bomb_positions):
+        # can_drop_bomb(previous_bomb_positions, previous_explosion_map):
+        # THERE WERE NO BOMBS/EXPLOSION -> OBJECTIVE: COLLECT COINS/MOVE CLOSER TO CRATE
 
-    if len(current_bomb_positions) == 0:
-        # there were and are no bombs -> objective: move closer to crate
-        previous_map = map_game_state_to_image(old_game_state)
-        current_map = map_game_state_to_image(new_game_state)
+        move_to_crate = True
 
-        ret_crates = find_next_crate(previous_map, previous_agent_position, previous_crate_positions)
+        if len(previous_coin_positions):
+            # THERE IS AT LEAST ONE COIN ON THE FIELD -> OBJECTIVE: COLLECT COIN(S)
+            ret_coins = find_next_coin(previous_map, previous_agent_position, previous_coin_positions)
 
-        if ret_crates is not None:
-            _, _, previous_steps_to_crate = ret_crates
+            if ret_coins is not None:
+                # COIN WAS REACHABLE
+                move_to_crate = False
+                _, previous_steps_to_coin = ret_coins
 
-            ret_crates = find_next_crate(current_map, current_agent_position, current_crate_positions)
+                ret_coins = find_next_coin(current_map, current_agent_position, current_coin_positions)
+
+                if ret_coins is not None:
+                    # COIN IS REACHABLE
+                    # ALWAYS TRUE IF THE AGENT DOES NOT DROP A BOMB WHEN TRYING TO COLLECT THE COIN
+                    _, current_steps_to_coin = ret_coins
+
+                    if current_steps_to_coin < previous_steps_to_coin:
+                        # AGENT MOVED CLOSER TO COIN
+                        reward_sum += 25
+                    elif e.COIN_COLLECTED not in events:
+                        # AGENT DID NOT MOVE CLOSER TO COIN NOR COLLECTED NEAREST COIN
+                        reward_sum -= 20
+        if move_to_crate:
+            # THERE IS NO COIN/COIN IS NOT REACHABLE -> OBJECTIVE: MOVE TO CRATE
+            ret_crates = find_next_crate(previous_map, previous_agent_position, previous_crate_positions)
 
             if ret_crates is not None:
-                _, _, current_steps_to_crate = ret_crates
+                # CRATE WAS REACHABLE
+                _, previous_steps_to_crate = ret_crates
 
-                if current_steps_to_crate < previous_steps_to_crate:
-                    reward_sum += 25
-                else:
-                    reward_sum -= 20
+                ret_crates = find_next_crate(current_map, current_agent_position, current_crate_positions)
 
+                if ret_crates is not None:
+                    # CRATE IS REACHABLE
+                    # ALWAYS TRUE IF THE AGENT DOES NOT DROP A BOMB WHEN TRYING TO MOVE TO THE CRATE
+                    _, current_steps_to_crate = ret_crates
 
-
-
-
-
-
-
-
-
-
-
-
-        if np.min(get_steps_between(previous_agent_position, previous_crate_positions)) > np.min(
-                get_steps_between(current_agent_position, current_crate_positions)):
-            # moved closer to crate -> good
-            reward_sum += 25
-        else:
-            # did not move closer to crate
-            reward_sum -= 10
-
+                    if current_steps_to_crate < previous_steps_to_crate:
+                        # AGENT MOVED CLOSER TO CRATE
+                        reward_sum += 25
+                    elif current_steps_to_crate == previous_steps_to_crate and not can_drop_bomb(previous_bomb_positions, previous_explosion_map) and e.WAITED in events:
+                        # AGENT WAITED NEXT TO CRATE AND COULDN'T DROP A BOMB
+                        reward_sum += 15
+                    else:
+                        # AGENT MOVED AWAY FROM CRATE
+                        reward_sum -= 25
     return reward_sum
