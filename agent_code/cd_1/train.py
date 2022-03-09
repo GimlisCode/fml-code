@@ -65,7 +65,8 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     idx_t1 = get_idx_for_state(new_game_state)
     action_idx_t = get_idx_for_action(self_action)
 
-    self.Q[idx_t][action_idx_t] += self.alpha * (reward + self.gamma * np.max(self.Q[idx_t1]) - self.Q[idx_t][action_idx_t])
+    self.Q[idx_t][action_idx_t] += self.alpha * (
+                reward + self.gamma * np.max(self.Q[idx_t1]) - self.Q[idx_t][action_idx_t])
 
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
@@ -134,7 +135,7 @@ def calculate_reward_old(events, old_game_state, new_game_state) -> int:
                 reward_sum += 10
             elif is_in_bomb_range(previous_agent_position, previous_bomb_positions) and min(
                     get_steps_between(previous_agent_position, previous_bomb_positions)) < min(
-                    get_steps_between(current_agent_position, current_bomb_positions)):
+                get_steps_between(current_agent_position, current_bomb_positions)):
                 # was in range and still is, but distance to bomb increased -> good
                 reward_sum += 10
             else:
@@ -181,24 +182,26 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         min_distance_to_next_crate = np.min(get_steps_between(previous_agent_position, previous_crate_positions))
         if min_distance_to_next_crate == 1:
             reward_sum += 55
-        elif min_distance_to_next_crate <= 3:
-            reward_sum -= 10
+        # elif len(objects_in_bomb_dist(previous_agent_position, previous_crate_positions)):
+        #     reward_sum += 10
         else:
             reward_sum -= 30
     elif len(current_bomb_positions) > 0:
         # there were and are bombs -> objective: move to safe place
-
         if np.min(get_steps_between(current_agent_position, current_bomb_positions)) == 0:
             reward_sum -= 10
 
-        ret = find_next_secure_field(old_game_state)
+        previous_map = map_game_state_to_image(old_game_state)
+        current_map = map_game_state_to_image(new_game_state)
 
-        if ret is None:
+        ret_safe_fields = find_next_secure_field(previous_map, previous_agent_position)
+
+        if ret_safe_fields is None:
             reward_sum -= 20
         else:
-            _, _, previous_steps_to_secure_field = ret
+            _, _, previous_steps_to_secure_field = ret_safe_fields
 
-            ret = find_next_secure_field(new_game_state)
+            ret = find_next_secure_field(current_map, current_agent_position)
 
             if ret is None:
                 reward_sum -= 20
@@ -209,16 +212,44 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
                     if current_steps_to_secure_field == 0:
                         reward_sum += 25
                     else:
-                        reward_sum += 25
+                        reward_sum += 20
                 elif current_steps_to_secure_field > previous_steps_to_secure_field:
                     reward_sum -= 20
-                elif current_steps_to_secure_field == 0:
-                    pass
-                else:
+                elif current_steps_to_secure_field != 0:
                     reward_sum -= 15
 
     if len(current_bomb_positions) == 0:
         # there were and are no bombs -> objective: move closer to crate
+        previous_map = map_game_state_to_image(old_game_state)
+        current_map = map_game_state_to_image(new_game_state)
+
+        ret_crates = find_next_crate(previous_map, previous_agent_position, previous_crate_positions)
+
+        if ret_crates is not None:
+            _, _, previous_steps_to_crate = ret_crates
+
+            ret_crates = find_next_crate(current_map, current_agent_position, current_crate_positions)
+
+            if ret_crates is not None:
+                _, _, current_steps_to_crate = ret_crates
+
+                if current_steps_to_crate < previous_steps_to_crate:
+                    reward_sum += 25
+                else:
+                    reward_sum -= 20
+
+
+
+
+
+
+
+
+
+
+
+
+
         if np.min(get_steps_between(previous_agent_position, previous_crate_positions)) > np.min(
                 get_steps_between(current_agent_position, current_crate_positions)):
             # moved closer to crate -> good
@@ -228,4 +259,3 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
             reward_sum -= 10
 
     return reward_sum
-

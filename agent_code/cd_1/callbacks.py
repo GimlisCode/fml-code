@@ -5,7 +5,6 @@ from typing import Tuple, Optional
 import numpy as np
 from scipy.spatial.distance import cityblock
 
-import events
 from settings import COLS, ROWS
 
 
@@ -26,7 +25,6 @@ def setup(self):
 
     :param self: This object is passed to all callbacks and you can set arbitrary values.
     """
-    self.actionChain = [events.WAITED] * 4
     try:
         with open("model.pt", "rb") as file:
             self.Q = pickle.load(file)
@@ -36,7 +34,7 @@ def setup(self):
         # self.Q = np.ones((11, 4, 4, 4, 4, 16, 6)) * 3
         # self.Q = np.ones((16, 4, 4, 6, 2, 16, 4, 4, 6)) * 3
         # self.Q = np.ones((16, 4, 4, 4, 4, 16, 2, 6)) * 3
-        self.Q = np.ones((16, 4, 4, 2, 6, 2, 6)) * 3
+        self.Q = np.ones((16, 6, 2, 6, 6)) * 3
 
 
 def act(self, game_state: dict) -> str:
@@ -51,7 +49,7 @@ def act(self, game_state: dict) -> str:
 
     current_round = game_state["round"]
 
-    random_prob = max(.6**(1 + current_round / 500), 0.05)
+    random_prob = max(.5**(1 + current_round / 40), 0.1)
     if self.train and random.random() < random_prob:
         self.logger.debug("Choosing action purely at random.")
         return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
@@ -116,7 +114,7 @@ def get_k_nearest_object_positions(agent_position, object_positions, k=1) -> lis
 
 def objects_in_bomb_dist(agent_position, obj_positions, dist=3):
     if len(obj_positions) == 0:
-        return []
+        return np.array([])
 
     steps = get_steps_between(agent_position, obj_positions)
     relevant_distances = steps <= dist
@@ -200,18 +198,25 @@ def get_idx_for_state(game_state: dict):
     # direction_with_most_crates = find_direction_to_increase_crates_destroyed(game_state)
     movement_idx = get_movement_indices(our_position, map)
 
-    ret = find_next_secure_field(game_state)
-    if ret is None:
-        next_step_direction_idx = 5
+    ret_safe_fields = find_next_secure_field(map, our_position)
+    if ret_safe_fields is None:
+        safe_field_direction_idx = 5
     else:
-        _, next_step_direction_idx, _ = ret
+        _, safe_field_direction_idx, _ = ret_safe_fields
 
     bomb_on_map_idx = 1 if len(bomb_positions) > 0 else 0
+
+    ret_crates = find_next_crate(map, our_position, crate_positions)
+    if ret_crates is None:
+        crate_direction_idx = 5
+    else:
+        _, crate_direction_idx, _ = ret_crates
 
     # return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0], expl_idx
     # return movement_idx, *crate_indices[0], direction_with_most_crates, in_bomb_range, neighbor_in_danger_index, *bomb_indices[0]
     # return movement_idx, *crate_indices[0], in_bomb_range, neighbor_in_danger_index, *bomb_indices[0]
-    return movement_idx, *crate_indices[0], is_crate_direct_neighbour, next_step_direction_idx, bomb_on_map_idx
+    # return movement_idx, *crate_indices[0], is_crate_direct_neighbour, next_step_direction_idx, bomb_on_map_idx, next_step_crate_direction_idx
+    return movement_idx, safe_field_direction_idx, bomb_on_map_idx, crate_direction_idx
 
 
 def is_next_to_crate(agent_position, crate_positions):
@@ -384,19 +389,16 @@ def map_game_state_to_image(game_state):
     return field  # 0: secure, 1: not passable, 2+: passable, but there will be an explosion in the future
 
 
-def find_next_secure_field(game_state) -> Optional[Tuple[Tuple[int, int], int, int]]:
+def find_next_secure_field(map, agent_position) -> Optional[Tuple[Tuple[int, int], int, int]]:
     """
     Returns: position, next_step_direction, needed_steps
     """
     # TODO: currently assuming, that we have only one bomb.
     #  With more we have to take the different countdowns into account
-    map = map_game_state_to_image(game_state)
-
-    agent_position = game_state["self"][3]
 
     secure_fields = np.argwhere(map == 0)
 
-    steps = get_steps_between(agent_position, np.argwhere(map == 0))
+    steps = np.array(get_steps_between(agent_position, np.argwhere(map == 0)))
 
     reachable_within_3_steps = secure_fields[steps <= 3]
     steps = steps[steps <= 3]
@@ -411,10 +413,34 @@ def find_next_secure_field(game_state) -> Optional[Tuple[Tuple[int, int], int, i
     return None
 
 
-def reachable(map, pos, agent_position, step=0) -> Tuple[bool, int, int]:
+def find_next_crate(map, agent_position, crate_positions) -> Optional[Tuple[Tuple[int, int], int, int]]:
+    """
+    Returns: position, next_step_direction, needed_steps
+    """
+
+    if not len(crate_positions):
+        return None
+
+    steps = get_steps_between(agent_position, crate_positions)
+
+    sorted_indices = np.argpartition(steps, kth=len(steps) - 1)
+
+    if steps[sorted_indices[0]] == 1:
+        return crate_positions[sorted_indices[0]], 0, 0
+
+    for idx in sorted_indices:
+        map[crate_positions[idx]] = 0
+        is_reachable, next_step_direction, needed_steps = reachable(map, crate_positions[idx], agent_position, limit=30)
+        if is_reachable:
+            return crate_positions[idx], next_step_direction, needed_steps-1
+        map[crate_positions[idx]] = 1
+    return None
+
+
+def reachable(map, pos, agent_position, step=0, limit=3) -> Tuple[bool, int, int]:
     sign_x, sign_y = np.sign(pos - agent_position)
 
-    if step > 3:
+    if step > limit:
         return False, 0, 0
 
     if sign_x == 0 and sign_y == 0:
