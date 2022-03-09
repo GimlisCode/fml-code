@@ -10,7 +10,7 @@ from agent_code.cc_4.network import QNetwork
 
 def train(network: QNetwork, data_path, device, num_of_epochs: int = 25, save_to: str = "model.pt"):
     dataset = GameStateDataset(data_path)
-    train_loader = DataLoader(dataset, batch_size=40, shuffle=True)
+    train_loader = DataLoader(dataset, batch_size=16, shuffle=True)
 
     optimizer = network.configure_optimizers()
 
