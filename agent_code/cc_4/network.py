@@ -11,22 +11,22 @@ class QNetwork(pl.LightningModule):
 
         self.conv_layers = torch.nn.Sequential(
             # expected input 18x18
-            torch.nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
+            torch.nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm2d(4),
+            torch.nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
             torch.nn.ReLU(),
             torch.nn.BatchNorm2d(8),
-            torch.nn.Conv2d(in_channels=8, out_channels=16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
+            torch.nn.Conv2d(in_channels=8, out_channels=16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),  # 9x9
             torch.nn.ReLU(),
             torch.nn.BatchNorm2d(16),
-            torch.nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),  # 9x9
+            torch.nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 9x9
             torch.nn.ReLU(),
             torch.nn.BatchNorm2d(32),
-            torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 9x9
-            torch.nn.ReLU(),
-            torch.nn.BatchNorm2d(64),
         )
 
         self.linear_layers = torch.nn.Sequential(
-            torch.nn.Linear(64 * 9 * 9, 264),
+            torch.nn.Linear(32 * 9 * 9, 264),
             torch.nn.ReLU(),
             torch.nn.BatchNorm1d(264),
             torch.nn.Linear(264, features_out),
@@ -40,7 +40,7 @@ class QNetwork(pl.LightningModule):
         self.double()
 
     def forward(self, x: torch.tensor) -> torch.tensor:
-        return self.linear_layers(self.conv_layers.forward(x).view((-1, 64 * 9 * 9)))
+        return self.linear_layers.forward(self.conv_layers.forward(x).view((-1, 32 * 9 * 9)))
 
     def configure_optimizers(self):
         # optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
@@ -51,7 +51,6 @@ class QNetwork(pl.LightningModule):
     def td_loss(self, y_t, action, reward, y_t_plus_1) -> torch.tensor:
         td_target = self.gamma * torch.max(y_t_plus_1, dim=1, keepdim=True)[0] + reward
         td_target = torch.clip(td_target, min=0, max=1)
-        # return torch.mean(torch.square(self.gamma * torch.max(y_t_plus_1, dim=1, keepdim=True)[0] + reward - y_t[:, action]))
         return F.smooth_l1_loss(y_t[:, action], td_target)
 
     def training_step(self, train_batch, batch_idx):
