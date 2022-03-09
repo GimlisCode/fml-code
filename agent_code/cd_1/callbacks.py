@@ -5,7 +5,7 @@ from typing import Tuple, Optional
 import numpy as np
 from scipy.spatial.distance import cityblock
 
-
+import events
 from settings import COLS, ROWS
 
 
@@ -26,7 +26,7 @@ def setup(self):
 
     :param self: This object is passed to all callbacks and you can set arbitrary values.
     """
-
+    self.actionChain = [events.WAITED] * 4
     try:
         with open("model.pt", "rb") as file:
             self.Q = pickle.load(file)
@@ -36,7 +36,7 @@ def setup(self):
         # self.Q = np.ones((11, 4, 4, 4, 4, 16, 6)) * 3
         # self.Q = np.ones((16, 4, 4, 6, 2, 16, 4, 4, 6)) * 3
         # self.Q = np.ones((16, 4, 4, 4, 4, 16, 2, 6)) * 3
-        self.Q = np.ones((16, 4, 4, 6, 2, 6)) * 3
+        self.Q = np.ones((16, 4, 4, 2, 6, 2, 6)) * 3
 
 
 def act(self, game_state: dict) -> str:
@@ -48,6 +48,7 @@ def act(self, game_state: dict) -> str:
     :param game_state: The dictionary that describes everything on the board.
     :return: The action to take as a string.
     """
+
     current_round = game_state["round"]
 
     random_prob = max(.6**(1 + current_round / 500), 0.05)
@@ -59,6 +60,7 @@ def act(self, game_state: dict) -> str:
     action = ACTIONS[np.argmax(self.Q[get_idx_for_state(game_state)])]
     if action == "BOMB" and is_in_corner(game_state["self"][3]):
         action = np.random.choice(ACTIONS, p=[.25, .25, .25, .25, 0, 0])
+
     return action
 
 
@@ -175,20 +177,22 @@ def get_idx_for_state(game_state: dict):
 
     map = map_game_state_to_image(game_state)
 
-    MAX_X = COLS - 2
-    MAX_Y = ROWS - 2
+    # MAX_X = COLS - 2
+    # MAX_Y = ROWS - 2
 
     # coin_dist_x_idx, coin_dist_y_idx = get_distance_indices(get_nearest_coin_dist(game_state))[0]
 
     nearest_crates = get_k_nearest_object_positions(our_position, crate_positions, k=1)
     crate_indices = get_distance_indices(nearest_crates - our_position)
+    is_crate_direct_neighbour = 1 if is_next_to_crate(our_position, crate_positions) else 0
 
-    nearest_bombs = get_k_nearest_bombs(our_position, bomb_positions, k=1)
-    bomb_indices = get_distance_indices(nearest_bombs - our_position)
 
-    expl_idx = get_explosion_indices(our_position, game_state["explosion_map"])
+    # nearest_bombs = get_k_nearest_bombs(our_position, bomb_positions, k=1)
+    # bomb_indices = get_distance_indices(nearest_bombs - our_position)
 
-    in_bomb_range = 1 if is_in_bomb_range(our_position, bomb_positions) else 0
+    # expl_idx = get_explosion_indices(our_position, game_state["explosion_map"])
+
+    # in_bomb_range = 1 if is_in_bomb_range(our_position, bomb_positions) else 0
     # neighbor_in_bomb_range_idx = get_dangerous_neighbor_indices(our_position, bomb_positions)
 
     # neighbor_in_danger_index = get_dangerous_neighbor_index(game_state)
@@ -207,19 +211,21 @@ def get_idx_for_state(game_state: dict):
     # return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0], expl_idx
     # return movement_idx, *crate_indices[0], direction_with_most_crates, in_bomb_range, neighbor_in_danger_index, *bomb_indices[0]
     # return movement_idx, *crate_indices[0], in_bomb_range, neighbor_in_danger_index, *bomb_indices[0]
-    return movement_idx, *crate_indices[0], next_step_direction_idx, bomb_on_map_idx
+    return movement_idx, *crate_indices[0], is_crate_direct_neighbour, next_step_direction_idx, bomb_on_map_idx
 
 
 def is_next_to_crate(agent_position, crate_positions):
     col = agent_position[0]
     row = agent_position[1]
 
+    crate_positions = crate_positions.tolist()
+
     top_pos = (col, row - 1)
     right_pos = (col + 1, row)
     bottom_pos = (col, row + 1)
     left_pos = (col - 1, row)
 
-    return top_pos in crate_positions.tolist() or right_pos in crate_positions.tolist() or bottom_pos in crate_positions.tolist() or left_pos in crate_positions.tolist()
+    return top_pos in crate_positions or right_pos in crate_positions or bottom_pos in crate_positions or left_pos in crate_positions
 
 
 def is_in_bomb_range(agent_position, bomb_positions):

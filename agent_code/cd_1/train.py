@@ -178,10 +178,13 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         reward_sum -= 50
 
     if e.BOMB_DROPPED in events:
-        if np.min(get_steps_between(previous_agent_position, previous_crate_positions)) == 1:
+        min_distance_to_next_crate = np.min(get_steps_between(previous_agent_position, previous_crate_positions))
+        if min_distance_to_next_crate == 1:
             reward_sum += 55
+        elif min_distance_to_next_crate <= 3:
+            reward_sum -= 10
         else:
-            reward_sum -= 15
+            reward_sum -= 30
     elif len(current_bomb_positions) > 0:
         # there were and are bombs -> objective: move to safe place
 
