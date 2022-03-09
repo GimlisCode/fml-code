@@ -158,7 +158,7 @@ def calculate_reward_old(events, old_game_state, new_game_state) -> int:
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
     game_rewards = {
-        e.INVALID_ACTION: -15
+        e.INVALID_ACTION: -25
     }
     reward_sum = 0
     for event in events:
@@ -175,15 +175,19 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     current_crate_positions = extract_crate_positions(new_game_state["field"])
 
     if len(previous_bomb_positions) == 0 and e.WAITED in events:
-        reward_sum -= 5
+        reward_sum -= 50
 
     if e.BOMB_DROPPED in events:
-        if min(get_steps_between(previous_agent_position, previous_crate_positions)) == 1:
-            reward_sum += 15
+        if np.min(get_steps_between(previous_agent_position, previous_crate_positions)) == 1:
+            reward_sum += 55
         else:
             reward_sum -= 15
     elif len(current_bomb_positions) > 0:
         # there were and are bombs -> objective: move to safe place
+
+        if np.min(get_steps_between(current_agent_position, current_bomb_positions)) == 0:
+            reward_sum -= 10
+
         ret = find_next_secure_field(old_game_state)
 
         if ret is None:
@@ -212,10 +216,10 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
 
     if len(current_bomb_positions) == 0:
         # there were and are no bombs -> objective: move closer to crate
-        if min(get_steps_between(previous_agent_position, previous_crate_positions)) > min(
+        if np.min(get_steps_between(previous_agent_position, previous_crate_positions)) > np.min(
                 get_steps_between(current_agent_position, current_crate_positions)):
             # moved closer to crate -> good
-            reward_sum += 10
+            reward_sum += 25
         else:
             # did not move closer to crate
             reward_sum -= 10

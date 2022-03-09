@@ -50,13 +50,10 @@ def act(self, game_state: dict) -> str:
     """
     current_round = game_state["round"]
 
-    random_prob = max(.5**(1 + current_round / 20), 0.01)
+    random_prob = max(.6**(1 + current_round / 500), 0.05)
     if self.train and random.random() < random_prob:
         self.logger.debug("Choosing action purely at random.")
-        action = np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
-        if action == "BOMB" and is_in_corner(game_state["self"][3]):
-            action = np.random.choice(ACTIONS, p=[.25, .25, .25, .25, 0, 0])
-        return action
+        return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
 
     self.logger.debug("Querying model for action.")
     action = ACTIONS[np.argmax(self.Q[get_idx_for_state(game_state)])]
