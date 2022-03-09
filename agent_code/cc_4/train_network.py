@@ -10,6 +10,7 @@ from agent_code.cc_4.network import QNetwork
 
 def train(network: QNetwork, data_path, device, num_of_epochs: int = 25, save_to: str = "model.pt"):
     dataset = GameStateDataset(data_path)
+    print(len(dataset))
     train_loader = DataLoader(dataset, batch_size=16, shuffle=True)
 
     optimizer = network.configure_optimizers()
@@ -50,7 +51,7 @@ def train(network: QNetwork, data_path, device, num_of_epochs: int = 25, save_to
 
 if __name__ == '__main__':
     Q = QNetwork(features_out=4, learning_rate=0.0001)
-    data_path = "../cc_train_data_collector_1/train_data"
+    data_path = "../cc_train_data_collector_1/train_data_new"
     device = torch.device('cpu')
 
     loss = train(Q, data_path, device, num_of_epochs=15)

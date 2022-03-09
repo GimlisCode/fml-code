@@ -2,6 +2,7 @@ from collections import namedtuple, deque
 
 from typing import List
 
+import numpy as np
 import tifffile
 
 import events as e
@@ -74,11 +75,11 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     train_element_meta_info = TrainDataPoint(features_t, action_idx_t, reward, features_t1)
 
     if train_element_meta_info not in self.meta_info:
-        old_game_state_img = map_game_state_to_image(old_game_state)
-        new_game_state_img = map_game_state_to_image(new_game_state)
+        old_game_state_img = map_game_state_to_multichannel_image(old_game_state)
+        new_game_state_img = map_game_state_to_multichannel_image(new_game_state)
 
-        img = np.stack((old_game_state_img, new_game_state_img))
-        tifffile.imsave(f"train_data/{self.img_idx}_{get_idx_for_action(self_action)}_{reward}.tif", img)
+        img = np.concatenate((old_game_state_img, new_game_state_img))
+        tifffile.imsave(f"train_data_new/{self.img_idx}_{get_idx_for_action(self_action)}_{reward}.tif", img)
         self.img_idx += 1
         self.meta_info.append(train_element_meta_info)
 
@@ -103,7 +104,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     with open("model.pt", "wb") as file:
         pickle.dump(self.Q, file)
 
-    with open("train_data/meta_info.json", "w") as file:
+    with open("train_data_new/meta_info.json", "w") as file:
         file.write(json.dumps({"meta_info": [x.as_dict() for x in self.meta_info]}))
 
     # plt.gray()
@@ -144,3 +145,22 @@ def map_game_state_to_image(game_state):
         field[coin] = 4  # 4: coin
 
     return field
+
+
+def map_game_state_to_multichannel_image(game_state):
+    map = game_state["field"]  # 0: free tiles, 1: crates, -1: stone walls
+
+    channel_free_tiles = np.zeros_like(map)
+    channel_free_tiles[map == 0] = 1
+
+    channel_walls = np.zeros_like(map)
+    channel_walls[map == -1] = 1
+
+    channel_player = np.zeros_like(map)
+    channel_player[game_state["self"][3]] = 1
+
+    channel_coins = np.zeros_like(map)
+    for coin in game_state["coins"]:
+        channel_coins[coin] = 1
+
+    return np.stack((channel_free_tiles, channel_walls, channel_player, channel_coins))

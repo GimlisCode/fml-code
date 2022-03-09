@@ -37,7 +37,7 @@ def setup(self):
         # self.Q = np.random.rand(9, 3, 3, 3, 4) * 3
         self.Q = np.ones((11, 3, 3, 4)) * 3
 
-    train_data_path = Path("train_data")
+    train_data_path = Path("train_data_new")
 
     if not train_data_path.exists():
         train_data_path.mkdir()
@@ -47,7 +47,7 @@ def setup(self):
     self.img_idx = 0 if len(idx_so_far) == 0 else max(idx_so_far) + 1
 
     try:
-        with open("train_data/meta_info.json", "r") as file:
+        with open("train_data_new/meta_info.json", "r") as file:
             self.meta_info = [TrainDataPoint.from_dict(x) for x in json.loads(file.read())["meta_info"]]
     except FileNotFoundError:
         self.meta_info = list()

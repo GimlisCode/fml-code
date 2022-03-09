@@ -11,7 +11,7 @@ class QNetwork(pl.LightningModule):
 
         self.conv_layers = torch.nn.Sequential(
             # expected input 18x18
-            torch.nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
+            torch.nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
             torch.nn.ReLU(),
             torch.nn.BatchNorm2d(4),
             torch.nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18

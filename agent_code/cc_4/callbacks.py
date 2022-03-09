@@ -22,7 +22,7 @@ def act(self, game_state: dict) -> str:
     if self.train and random.random() < random_prob:
         return np.random.choice(MOVE_ACTIONS)
 
-    features = map_game_state_to_image(game_state)
+    features = map_game_state_to_multichannel_image(game_state)
     return MOVE_ACTIONS[torch.argmax(self.Q.forward(features)[0, :])]
 
 
@@ -40,3 +40,27 @@ def map_game_state_to_image(game_state):
     img[0, 0, 0:-1, 0:-1] = torch.tensor(field) / 4
 
     return img
+
+
+def map_game_state_to_multichannel_image(game_state):
+    map = game_state["field"]  # 0: free tiles, 1: crates, -1: stone walls
+
+    channel_free_tiles = np.zeros_like(map)
+    channel_free_tiles[map == 0] = 1
+
+    channel_walls = np.zeros_like(map)
+    channel_walls[map == -1] = 1
+
+    channel_player = np.zeros_like(map)
+    channel_player[game_state["self"][3]] = 1
+
+    channel_coins = np.zeros_like(map)
+    for coin in game_state["coins"]:
+        channel_coins[coin] = 1
+
+    img = np.stack((channel_free_tiles, channel_walls, channel_player, channel_coins))
+
+    img_torch = torch.zeros((1, 4, 18, 18), dtype=torch.double)
+    img_torch[0, :, :-1, :-1] = torch.tensor(img)
+
+    return img_torch
