@@ -8,7 +8,7 @@ from agent_code.cc_4.dataset import GameStateDataset
 from agent_code.cc_4.network import QNetwork
 
 
-def train(network: QNetwork, data_path, device, num_of_epochs: int = 25, save_to: str = "model.pt"):
+def train(network: QNetwork, data_path, num_of_epochs: int = 25, save_to: str = "model.pt"):
     dataset = GameStateDataset(data_path)
     print(len(dataset))
     train_loader = DataLoader(dataset, batch_size=16, shuffle=True)
@@ -23,10 +23,7 @@ def train(network: QNetwork, data_path, device, num_of_epochs: int = 25, save_to
         epoch_loss = list()
 
         for i, data in enumerate(train_loader):
-            state_features_t, action, reward, state_features_t_plus_1 = data[0].to(device), \
-                                                                        data[1].to(device), \
-                                                                        data[2].to(device), \
-                                                                        data[3].to(device)
+            state_features_t, action, reward, state_features_t_plus_1 = data
 
             if state_features_t.shape[0] == 1:
                 # if there is only one element in the last batch
@@ -52,9 +49,8 @@ def train(network: QNetwork, data_path, device, num_of_epochs: int = 25, save_to
 if __name__ == '__main__':
     Q = QNetwork(features_out=4, learning_rate=0.0005)
     data_path = "../cc_train_data_collector_1/train_data_new"
-    device = torch.device('cpu')
 
-    loss = train(Q, data_path, device, num_of_epochs=25)
+    loss = train(Q, data_path, num_of_epochs=15)
 
     with open("./loss.json", "w") as f:
         f.write(json.dumps({"loss": loss}))
