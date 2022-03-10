@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 
 
 if __name__ == '__main__':
-    with open("models/model2500+3-5.pt", "rb") as file:
+    with open("../cc_2/model.pt", "rb") as file:
         Q = pickle.load(file)
 
     plt.gray()
-    plt.imshow(np.reshape(Q, (9 * 27, 4)))
-    plt.savefig("q.svg")
-    #plt.show()
+    plt.imshow(np.reshape(Q, (5, 4)))
+    # plt.savefig("q.svg")
+    plt.show()
 
