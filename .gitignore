@@ -111,3 +111,4 @@ screenshots/*.webm
 
 replays/
 results/
+/agent_code/cc_train_data_collector_1/train_data_new/

@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 import torch
 import numpy as np
@@ -23,8 +22,9 @@ def train(network: QNetwork, data_path, num_of_epochs: int = 25, save_to: str = 
 
     train_loader = DataLoader(dataset, batch_size=16, shuffle=True)
 
-    optimizer = network.configure_optimizers()
-    schedular = StepLR(optimizer, 15, gamma=0.7)
+    optimizer_configurations = network.configure_optimizers()
+    optimizer = optimizer_configurations[0][0]
+    scheduler = optimizer_configurations[1][0]
 
     network.train()
     network.to(device)
@@ -54,7 +54,7 @@ def train(network: QNetwork, data_path, num_of_epochs: int = 25, save_to: str = 
         running_loss.append(np.mean(epoch_loss))
         print(f"epoch {epoch + 1}/{num_of_epochs} loss: {running_loss[-1]}")
 
-        schedular.step()
+        scheduler.step()
 
     network.eval()
 
