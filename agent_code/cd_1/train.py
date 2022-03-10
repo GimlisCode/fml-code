@@ -175,7 +175,7 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     current_coin_positions = new_game_state["coins"]
 
     previous_explosion_map = old_game_state["explosion_map"]
-    current_explosion_map = new_game_state["explosion_map"]
+    # current_explosion_map = new_game_state["explosion_map"]
 
     previous_map = map_game_state_to_image(old_game_state)
     current_map = map_game_state_to_image(new_game_state)
@@ -187,6 +187,9 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
 
     if e.BOMB_DROPPED in events:
         # AGENT DROPPED A BOMB -> CHECK IF THERE ARE CRATES/IF THERE WAS A COIN/IF AGENT WAS NEXT TO CRATE
+
+        if is_in_corner(previous_agent_position):
+            reward_sum -= 30
 
         ret_crate = find_next_crate(previous_map, previous_agent_position, previous_crate_positions)
 
@@ -205,7 +208,7 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
                 reward_sum += 25
             else:
                 # AGENT WAS NOT NEXT TO CRATE
-                reward_sum -= 20
+                reward_sum -= 30
     elif len(current_bomb_positions) > 0:
         # THERE WAS AND STILL IS A BOMB -> OBJECTIVE: DODGE BOMB BY MOVING TO SAFE FIELD (OR STAYING THERE)
         # if np.min(get_steps_between(current_agent_position, current_bomb_positions)) == 0:
@@ -215,8 +218,8 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
 
         if ret_safe_fields is None:
             # SAFE FIELD WAS NOT REACHABLE
-            reward_sum -= 20
-            # pass
+            # reward_sum -= 20
+            pass
         else:
             # SAFE FIELD WAS REACHABLE
             _, previous_steps_to_secure_field = ret_safe_fields
@@ -292,7 +295,7 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
                         reward_sum += 25
                     elif current_steps_to_crate == previous_steps_to_crate and not can_drop_bomb(previous_bomb_positions, previous_explosion_map) and e.WAITED in events:
                         # AGENT WAITED NEXT TO CRATE AND COULDN'T DROP A BOMB
-                        reward_sum += 15
+                        reward_sum += 10
                     else:
                         # AGENT MOVED AWAY FROM CRATE
                         reward_sum -= 25

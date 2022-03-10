@@ -34,8 +34,8 @@ def setup(self):
         # self.Q = np.ones((11, 4, 4, 4, 4, 16, 6)) * 3
         # self.Q = np.ones((16, 4, 4, 6, 2, 16, 4, 4, 6)) * 3
         # self.Q = np.ones((16, 4, 4, 4, 4, 16, 2, 6)) * 3
-        self.Q = np.ones((16, 6, 2, 6, 5, 6)) * 3
-
+        # self.Q = np.ones((16, 6, 2, 6, 5, 5, 6)) * 3
+        self.Q = np.ones((6, 2, 6, 5, 2, 6)) * 3
 
 def act(self, game_state: dict) -> str:
     """
@@ -56,8 +56,8 @@ def act(self, game_state: dict) -> str:
 
     self.logger.debug("Querying model for action.")
     action = ACTIONS[np.argmax(self.Q[get_idx_for_state(game_state)])]
-    if action == "BOMB" and is_in_corner(game_state["self"][3]):
-        action = np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .2, 0])
+    # if action == "BOMB" and is_in_corner(game_state["self"][3]):
+    #     action = np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .2, 0])
 
     return action
 
@@ -174,8 +174,6 @@ def get_idx_for_state(game_state: dict):
     bomb_positions = np.array([coords for coords, _ in game_state["bombs"]])
     coin_positions = game_state["coins"]
 
-    game_state['field'].T
-
     map = map_game_state_to_image(game_state)
 
     # MAX_X = COLS - 2
@@ -217,16 +215,22 @@ def get_idx_for_state(game_state: dict):
         crate_direction_idx, _ = ret_crates
 
     ret_coins = find_next_coin(map, our_position, coin_positions)
+
     if ret_coins is None:
         coin_direction_idx = 0
     else:
         coin_direction_idx, _ = ret_coins
 
+    # bomb_countdown = 4 if not len(game_state["bombs"]) else game_state["bombs"][0][1]
+    corner_idx = 1 if is_in_corner(our_position) else 0
+
+
     # return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0], expl_idx
     # return movement_idx, *crate_indices[0], direction_with_most_crates, in_bomb_range, neighbor_in_danger_index, *bomb_indices[0]
     # return movement_idx, *crate_indices[0], in_bomb_range, neighbor_in_danger_index, *bomb_indices[0]
     # return movement_idx, *crate_indices[0], is_crate_direct_neighbour, next_step_direction_idx, bomb_on_map_idx, next_step_crate_direction_idx
-    return movement_idx, safe_field_direction_idx, can_drop_bomb_idx, crate_direction_idx, coin_direction_idx
+    # return movement_idx, safe_field_direction_idx, can_drop_bomb_idx, crate_direction_idx, coin_direction_idx, bomb_countdown
+    return safe_field_direction_idx, can_drop_bomb_idx, crate_direction_idx, coin_direction_idx, corner_idx#, bomb_countdown
 
 
 def can_drop_bomb(bomb_positions, explosion_map):
