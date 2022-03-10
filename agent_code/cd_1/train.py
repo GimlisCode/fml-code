@@ -17,6 +17,13 @@ RECORD_ENEMY_TRANSITIONS = 1.0  # record enemy transitions with probability ...
 # Events
 PLACEHOLDER_EVENT = "PLACEHOLDER"
 
+direction_mapping = {
+    1: "RIGHT",
+    2: "DOWN",
+    3: "LEFT",
+    4: "UP"
+}
+
 
 def setup_training(self):
     """
@@ -57,7 +64,7 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     if old_game_state is None:
         return
 
-    reward = calculate_reward(events, old_game_state, new_game_state)
+    reward = calculate_reward(events, old_game_state, new_game_state, self_action)
 
     idx_t = get_idx_for_state(old_game_state)
     idx_t1 = get_idx_for_state(new_game_state)
@@ -152,10 +159,10 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 #     return reward_sum
 
 
-def calculate_reward(events, old_game_state, new_game_state) -> int:
+def calculate_reward(events, old_game_state, new_game_state, action) -> int:
     game_rewards = {
-        e.INVALID_ACTION: -50,
-        e.COIN_COLLECTED: 20
+        e.INVALID_ACTION: -50
+        # e.COIN_COLLECTED: 20
     }
     reward_sum = 0
     for event in events:
@@ -260,21 +267,16 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
             if ret_coins is not None:
                 # COIN WAS REACHABLE
                 move_to_crate = False
-                _, previous_steps_to_coin = ret_coins
+                previous_coin_direction, previous_steps_to_coin = ret_coins
 
-                ret_coins = find_next_coin(current_map, current_agent_position, current_coin_positions)
-
-                if ret_coins is not None:
-                    # COIN IS REACHABLE
-                    # ALWAYS TRUE IF THE AGENT DOES NOT DROP A BOMB WHEN TRYING TO COLLECT THE COIN
-                    _, current_steps_to_coin = ret_coins
-
-                    if current_steps_to_coin < previous_steps_to_coin:
-                        # AGENT MOVED CLOSER TO COIN
-                        reward_sum += 25
-                    elif e.COIN_COLLECTED not in events:
-                        # AGENT DID NOT MOVE CLOSER TO COIN NOR COLLECTED NEAREST COIN
+                if previous_coin_direction != 0:
+                    # AGENT KNEW COIN DIRECTION
+                    if direction_mapping[previous_coin_direction] != action:
+                        # AGENT TOOK OTHER ACTION
                         reward_sum -= 20
+                    else:
+                        # AGENT FOLLOWED OUR GUIDANCE
+                        reward_sum += 20
         if move_to_crate:
             # THERE IS NO COIN/COIN IS NOT REACHABLE -> OBJECTIVE: MOVE TO CRATE
             ret_crates = find_next_crate(previous_map, previous_agent_position, previous_crate_positions)
