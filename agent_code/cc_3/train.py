@@ -9,7 +9,7 @@ from .dataset import GameStateDataset
 
 
 def setup_training(self):
-    self.Q.learning_rate = 0.001
+    self.Q.learning_rate = 0.00001
     self.Q.gamma = 0.25
 
     self.optimizer = self.Q.configure_optimizers()
@@ -34,6 +34,8 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 
     self.Q.train()
 
+    running_loss = list()
+
     for i, data in enumerate(train_loader, 0):
         state_features_t, action, reward, state_features_t_plus_1 = data[0].to(self.device), \
                                                                     data[1].to(self.device), \
@@ -49,7 +51,9 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
         loss.backward()
         self.optimizer.step()
 
-        self.train_info["train_loss"].append(loss.item())
+        running_loss.append(loss.item())
+
+    self.train_info["train_loss"].append(np.mean(running_loss))
 
     self.Q.eval()
     self.Q.save("model.pt")

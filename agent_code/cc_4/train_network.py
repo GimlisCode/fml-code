@@ -47,10 +47,10 @@ def train(network: QNetwork, data_path, num_of_epochs: int = 25, save_to: str = 
 
 
 if __name__ == '__main__':
-    Q = QNetwork(features_out=4, learning_rate=0.0005)
+    Q = QNetwork(features_out=4, learning_rate=0.001)
     data_path = "../cc_train_data_collector_1/train_data_new"
 
-    loss = train(Q, data_path, num_of_epochs=15)
+    loss = train(Q, data_path, num_of_epochs=50)
 
     with open("./loss.json", "w") as f:
         f.write(json.dumps({"loss": loss}))
