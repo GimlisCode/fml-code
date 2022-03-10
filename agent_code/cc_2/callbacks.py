@@ -432,12 +432,12 @@ def reachable(map, pos, agent_position, step=0, limit=3) -> Tuple[bool, int, int
         return True, 0, step
 
     if sign_x != 0 and map[agent_position[0] + sign_x, agent_position[1]] != 1:
-        ret = reachable(map, pos, np.array([agent_position[0] + sign_x, agent_position[1]]), step+1)
+        ret = reachable(map, pos, np.array([agent_position[0] + sign_x, agent_position[1]]), step+1, limit)
         if ret[0]:
             return True, 1 if sign_x > 0 else 3, ret[2]
 
     if sign_y != 0 and map[agent_position[0], agent_position[1] + sign_y] != 1:
-        ret = reachable(map, pos, np.array([agent_position[0], agent_position[1] + sign_y]), step + 1)
+        ret = reachable(map, pos, np.array([agent_position[0], agent_position[1] + sign_y]), step + 1, limit)
         if ret[0]:
             return True, 4 if sign_y < 0 else 2, ret[2]
 
