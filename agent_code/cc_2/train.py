@@ -1,21 +1,10 @@
-from collections import namedtuple, deque
-
+import pickle
 from typing import List
 
+import numpy as np
 
 import events as e
-from .callbacks import *
-
-# This is only an example!
-Transition = namedtuple('Transition',
-                        ('state', 'action', 'next_state', 'reward'))
-
-# Hyper parameters -- DO modify
-TRANSITION_HISTORY_SIZE = 3  # keep only ... last transitions
-RECORD_ENEMY_TRANSITIONS = 1.0  # record enemy transitions with probability ...
-
-# Events
-PLACEHOLDER_EVENT = "PLACEHOLDER"
+from .callbacks import get_idx_for_state, get_idx_for_action, map_game_state_to_image, find_next_coin
 
 direction_mapping = {
     1: "RIGHT",
@@ -26,15 +15,11 @@ direction_mapping = {
 
 
 def setup_training(self):
-    self.transitions = deque(maxlen=TRANSITION_HISTORY_SIZE)
-
     self.alpha = 0.2
     self.gamma = 0.5
 
 
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):
-    self.logger.debug(f'Encountered game event(s) {", ".join(map(repr, events))} in step {new_game_state["step"]}')
-
     if old_game_state is None:
         return
 
