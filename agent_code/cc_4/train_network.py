@@ -1,5 +1,7 @@
 import json
+from pathlib import Path
 
+from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 import torch
 import numpy as np
@@ -9,13 +11,23 @@ from agent_code.cc_4.network import QNetwork
 
 
 def train(network: QNetwork, data_path, num_of_epochs: int = 25, save_to: str = "model.pt"):
-    dataset = GameStateDataset(data_path)
-    print(len(dataset))
+    logging_path = Path("./training_logs")
+
+    if not logging_path.exists():
+        logging_path.mkdir()
+
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    dataset = GameStateDataset.from_data_path(data_path, device=device)
+    print(f"Dataset length: {len(dataset)}")
+
     train_loader = DataLoader(dataset, batch_size=16, shuffle=True)
 
     optimizer = network.configure_optimizers()
+    schedular = StepLR(optimizer, 15, gamma=0.7)
 
     network.train()
+    network.to(device)
 
     running_loss = list()
 
@@ -36,8 +48,13 @@ def train(network: QNetwork, data_path, num_of_epochs: int = 25, save_to: str = 
 
             epoch_loss.append(loss.item())
 
+        if len(running_loss) == 0 or np.mean(epoch_loss) < np.min(running_loss):
+            network.save(str(logging_path.joinpath(f"model_epoch_{epoch+1}.pt")))
+
         running_loss.append(np.mean(epoch_loss))
         print(f"epoch {epoch + 1}/{num_of_epochs} loss: {running_loss[-1]}")
+
+        schedular.step()
 
     network.eval()
 

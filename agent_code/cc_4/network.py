@@ -66,7 +66,9 @@ class QNetwork(pl.LightningModule):
 
         loss = self.td_loss(y_t, action, reward, y_t_plus_1)
 
-        # self.log('train_loss', loss)
+        if self.trainer is not None:
+            self.log("train_loss", loss)
+
         return loss
 
     def validation_step(self, val_batch, batch_idx):
@@ -77,12 +79,16 @@ class QNetwork(pl.LightningModule):
 
         loss = self.td_loss(y_t, action, reward, y_t_plus_1)
 
-        # self.log('val_loss', loss)
+        if self.trainer is not None:
+            self.log("val_loss", loss)
+
         return loss
 
     def load(self, path):
-        # self.load_state_dict(torch.load(STATE_DICT_DIR.joinpath("base.ckpt"))["state_dict"])
         self.load_state_dict(torch.load(path))
+
+    def load_from_pl_checkpoint(self, path):
+        self.load_state_dict(torch.load(path)["state_dict"])
 
     def save(self, path):
         torch.save(self.state_dict(), path)
