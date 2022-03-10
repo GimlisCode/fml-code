@@ -21,7 +21,7 @@ class QNetwork(pl.LightningModule):
             torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),  # 9x9
             torch.nn.ReLU(),
             torch.nn.BatchNorm2d(64),
-            torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 9x9
+            torch.nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 9x9
             torch.nn.ReLU(),
             torch.nn.BatchNorm2d(128),
         )
@@ -44,7 +44,7 @@ class QNetwork(pl.LightningModule):
         self.double()
 
     def forward(self, x: torch.tensor) -> torch.tensor:
-        return self.linear_layers.forward(self.conv_layers.forward(x).view((-1, 16 * 9 * 9)))
+        return self.linear_layers.forward(self.conv_layers.forward(x).view((-1, 128 * 9 * 9)))
 
     def configure_optimizers(self):
         # optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)
