@@ -8,6 +8,7 @@ from scipy.spatial.distance import cityblock
 from settings import COLS, ROWS
 
 
+
 ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 
 
@@ -25,17 +26,35 @@ def setup(self):
 
     :param self: This object is passed to all callbacks and you can set arbitrary values.
     """
+    self.model_number = None
     try:
-        with open("model.pt", "rb") as file:
+        with open("modelList.txt", "r") as model_file:
+            model_list = model_file.readline().split(",")
+            tmp2 = model_list.pop(0)
+            model_list.append(tmp2)
+            self.model_number = tmp2
+
+        with open("modelList.txt", "w") as model_file:
+            model_file.write(",".join(model_list))
+
+        with open(f"model{self.model_number}", "rb") as file:
             self.Q = pickle.load(file)
-            print("Loaded")
+            print(f"Loaded: {self.model_number}")
+
     except (EOFError, FileNotFoundError):
-        # self.Q = np.ones((11, 4, 4, 4, 4, 4, 4, 16, 6)) * 3
-        # self.Q = np.ones((11, 4, 4, 4, 4, 16, 6)) * 3
-        # self.Q = np.ones((16, 4, 4, 6, 2, 16, 4, 4, 6)) * 3
-        # self.Q = np.ones((16, 4, 4, 4, 4, 16, 2, 6)) * 3
-        # self.Q = np.ones((16, 6, 2, 6, 5, 5, 6)) * 3
-        self.Q = np.ones((7, 2, 6, 6, 6)) * 3
+        try:
+            with open("model.pt", "rb") as file:
+                self.Q = pickle.load(file)
+                print("Loaded")
+        except (EOFError, FileNotFoundError):
+            # self.Q = np.ones((11, 4, 4, 4, 4, 4, 4, 16, 6)) * 3
+            # self.Q = np.ones((11, 4, 4, 4, 4, 16, 6)) * 3
+            # self.Q = np.ones((16, 4, 4, 6, 2, 16, 4, 4, 6)) * 3
+            # self.Q = np.ones((16, 4, 4, 4, 4, 16, 2, 6)) * 3
+            # self.Q = np.ones((16, 6, 2, 6, 5, 5, 6)) * 3
+            self.Q = np.ones((7, 2, 6, 6, 6)) * 3
+
+
 
 def act(self, game_state: dict) -> str:
     """
