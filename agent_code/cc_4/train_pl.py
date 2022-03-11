@@ -9,7 +9,8 @@ from agent_code.cc_4.network import QNetwork
 
 if __name__ == "__main__":
     print("Loading dataset...")
-    all_data = GameStateDataset.from_data_path("../cc_train_data_collector_1/train_data_new", load=False)
+    all_data = GameStateDataset.from_data_path("../cc_train_data_collector_1/train_data_new", load=False,
+                                               augment_data=True)
     dataset_train, dataset_val = all_data.split(val_percentage=0.2)
 
     print("Loading finished. Dataset size (train/val):", len(dataset_train), len(dataset_val))

@@ -1,18 +1,27 @@
+import random
 from pathlib import Path
-from random import shuffle
 from typing import Tuple
 
 import tifffile
+import torch
 from torch.utils.data import Dataset
 from torch.utils.data.dataset import T_co
-import torch
+
+from agent_code.cc_4.augmentations import (
+    rotate_90_degree_anticlockwise,
+    rotate_90_degree_clockwise,
+    rotate_180_degree,
+    flip_left_right,
+    flip_up_down
+)
 
 
 class GameStateDataset(Dataset):
-    def __init__(self, files: list, device: torch.device = None, load=True):
+    def __init__(self, files: list, device: torch.device = None, load: bool = True, augment_data: bool = False):
         self.files = files
         self.device = device
-        shuffle(self.files)
+        self.augment_data = augment_data
+        random.shuffle(self.files)
 
         self.state_t = list()
         self.state_t_1 = list()
@@ -27,8 +36,14 @@ class GameStateDataset(Dataset):
             self.loaded = False
 
     @staticmethod
-    def from_data_path(data_path: str, device: torch.device = None, load: bool = True) -> "GameStateDataset":
-        return GameStateDataset(list(Path(data_path).glob("*.tif")), device=device, load=load)
+    def from_data_path(data_path: str, device: torch.device = None, load: bool = True,
+                       augment_data: bool = False) -> "GameStateDataset":
+        return GameStateDataset(
+            list(Path(data_path).glob("*.tif")),
+            device=device,
+            load=load,
+            augment_data=augment_data
+        )
 
     def load_files(self):
         for filename in self.files:
@@ -64,7 +79,10 @@ class GameStateDataset(Dataset):
     def __getitem__(self, index: int) -> T_co:
         if not self.loaded:
             raise ValueError("The data is not loaded. Call load_files() before usage.")
-        return self.state_t[index], self.action[index], self.reward[index], self.state_t_1[index]
+        if self.augment_data:
+            return self.state_t[index], self.action[index], self.reward[index], self.state_t_1[index]
+        else:
+            return self.get_augmented_item(index)
 
     def try_to_overcome_bias(self):
         reward_10_data = [f for f in self.files if f.name.endswith("_10.tif")]
@@ -81,12 +99,56 @@ class GameStateDataset(Dataset):
                 + reward_minus_10_data[:min_len]
         )
 
+    def get_augmented_item(self, index):
+        state_t = self.state_t[index]
+        action = self.action[index]
+        reward = self.reward[index]
+        state_t_1 = self.state_t_1[index]
+
+        if random.random() < 1/8:
+            return state_t, action, reward, state_t_1
+
+        state_t = state_t.clone()
+        action = action.clone()
+        state_t_1 = state_t_1.clone()
+
+        state_t_orig = state_t[:, 0:-1, 0:-1]
+        state_t_1_orig = state_t_1[:, 0:-1, 0:-1]
+
+        augment_num = random.randint(1, 7)
+
+        if augment_num == 1:
+            state_t[:, 0:-1, 0:-1], action, state_t_1[:, 0:-1, 0:-1] = \
+                rotate_90_degree_anticlockwise(state_t_orig, action, state_t_1_orig)
+        elif augment_num == 2:
+            state_t[:, 0:-1, 0:-1], action, state_t_1[:, 0:-1, 0:-1] = \
+                rotate_90_degree_clockwise(state_t_orig, action, state_t_1_orig)
+        elif augment_num == 3:
+            state_t[:, 0:-1, 0:-1], action, state_t_1[:, 0:-1, 0:-1] = \
+                rotate_180_degree(state_t_orig, action, state_t_1_orig)
+        elif augment_num == 4:
+            state_t[:, 0:-1, 0:-1], action, state_t_1[:, 0:-1, 0:-1] = \
+                flip_left_right(state_t_orig, action, state_t_1_orig)
+        elif augment_num == 5:
+            state_t[:, 0:-1, 0:-1], action, state_t_1[:, 0:-1, 0:-1] = \
+                flip_up_down(state_t_orig, action, state_t_1_orig)
+        elif augment_num == 6:
+            state_t_orig, action, state_t_1_orig = rotate_90_degree_anticlockwise(state_t_orig, action, state_t_1_orig)
+            state_t[:, 0:-1, 0:-1], action, state_t_1[:, 0:-1, 0:-1] = \
+                flip_left_right(state_t_orig, action, state_t_1_orig)
+        elif augment_num == 7:
+            state_t_orig, action, state_t_1_orig = rotate_90_degree_clockwise(state_t_orig, action, state_t_1_orig)
+            state_t[:, 0:-1, 0:-1], action, state_t_1[:, 0:-1, 0:-1] = \
+                flip_left_right(state_t_orig, action, state_t_1_orig)
+
+        return state_t, action, reward, state_t_1
+
     def split(self, val_percentage: float = 0.2) -> Tuple["GameStateDataset", "GameStateDataset"]:
         split_idx = min(int((1 - val_percentage) * len(self.files)) + 1, len(self.files))
         train_data = self.files[:split_idx]
         val_data = self.files[split_idx:]
 
         return (
-            GameStateDataset(train_data, device=self.device, load=True),
+            GameStateDataset(train_data, device=self.device, load=True, augment_data=self.augment_data),
             GameStateDataset(val_data, device=self.device, load=True)
         )
