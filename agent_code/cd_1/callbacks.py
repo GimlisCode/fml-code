@@ -69,7 +69,7 @@ def act(self, game_state: dict) -> str:
     current_round = game_state["round"]
 
     random_prob = max(.5**(1 + current_round / 40), 0.1)
-    # random_prob = .25
+    # random_prob = .05
     if self.train and random.random() < random_prob:
         self.logger.debug("Choosing action purely at random.")
         return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
@@ -503,11 +503,11 @@ def find_next_crate(map, agent_position, crate_positions) -> Optional[Tuple[int,
         return 0, 0
 
     for idx in sorted_indices:
-        map[crate_positions[idx]] = 0
+        map[crate_positions[idx][0], crate_positions[idx][1]] = 0
         is_reachable, next_step_direction, needed_steps = reachable(map, crate_positions[idx], agent_position, limit=30)
         if is_reachable:
             return next_step_direction, needed_steps-1
-        map[crate_positions[idx]] = 1
+        map[crate_positions[idx][0], crate_positions[idx][1]] = 1
     return 5, 0
 
 
@@ -533,6 +533,7 @@ def find_next_coin(map, agent_position, coin_positions) -> Optional[Tuple[int, i
 
 def reachable(map, pos, agent_position, step=0, limit=3) -> Tuple[bool, int, int]:
     sign_x, sign_y = np.sign(pos - agent_position)
+    diff_x, diff_y = np.abs(pos - agent_position)
 
     if step > limit:
         return False, 0, 0
@@ -540,14 +541,50 @@ def reachable(map, pos, agent_position, step=0, limit=3) -> Tuple[bool, int, int
     if sign_x == 0 and sign_y == 0:
         return True, 0, step
 
-    if sign_x != 0 and map[agent_position[0] + sign_x, agent_position[1]] != 1:
-        ret = reachable(map, pos, np.array([agent_position[0] + sign_x, agent_position[1]]), step+1, limit)
-        if ret[0]:
-            return True, 1 if sign_x > 0 else 3, ret[2]
+    if sign_x != 0:
+        # DIFFERENT COLUMN
+        if diff_x == 1 and map[agent_position[0] + sign_x, agent_position[1] + sign_y] == 1:
+            # IF THERE'S A BLOCK ON OUR TOP/BOTTOM DIAGONAL, WE DON'T GO LEFT OR RIGHT BUT UP/DOWN
+            pass
+        elif map[agent_position[0] + sign_x, agent_position[1]] != 1:
+            # GO LEFT/RIGHT IN SAME ROW
+            ret = reachable(map, pos, np.array([agent_position[0] + sign_x, agent_position[1]]), step+1, limit)
+            if ret[0]:
+                return True, 1 if sign_x > 0 else 3, ret[2]
+    elif map[agent_position[0], agent_position[1] + sign_y] == 1:
+        # SAME COLUMN, FIELD ABOVE/BELOW IS BLOCKED
+        if map[agent_position[0] - 1, agent_position[1]] != 1 and map[agent_position[0] - 1, agent_position[1] + sign_y] != 1:
+            # FIELD LEFT AND LEFT UP/DOWN IS FREE --> GO LEFT
+            ret = reachable(map, pos, np.array([agent_position[0] - 1, agent_position[1] + sign_y]), step + 2, limit)
+            if ret[0]:
+                return True, 3, ret[2]  # go left
+        if map[agent_position[0] + 1, agent_position[1]] != 1 and map[agent_position[0] + 1, agent_position[1] + sign_y] != 1:
+            # FIELD RIGHT AND RIGHT UP/DOWN IS FREE --> GO RIGHT
+            ret = reachable(map, pos, np.array([agent_position[0] + 1, agent_position[1] + sign_y]), step + 2, limit)
+            if ret[0]:
+                return True, 1, ret[2]  # go right
 
-    if sign_y != 0 and map[agent_position[0], agent_position[1] + sign_y] != 1:
-        ret = reachable(map, pos, np.array([agent_position[0], agent_position[1] + sign_y]), step+1, limit)
-        if ret[0]:
-            return True, 4 if sign_y < 0 else 2, ret[2]
+    if sign_y != 0:
+        # DIFFERENT ROW
+        if diff_y == 1 and map[agent_position[0] + sign_x, agent_position[1] + sign_y] == 1:
+            # IF THERE'S A BLOCK ON OUR LEFT/RIGHT DIAGONAL, WE DON'T GO UP/DOWN BUT RIGHT/LEFT
+            pass
+        elif map[agent_position[0], agent_position[1] + sign_y] != 1:
+            # GO UP/DOWN IN SAME COLUMN
+            ret = reachable(map, pos, np.array([agent_position[0], agent_position[1] + sign_y]), step + 1, limit)
+            if ret[0]:
+                return True, 4 if sign_y < 0 else 2, ret[2]
+    elif map[agent_position[0] + sign_x, agent_position[1]] == 1:
+        # SAME ROW, FIELD RIGHT/LEFT IS BLOCKED
+        if map[agent_position[0], agent_position[1] - 1] != 1 and map[agent_position[0] + sign_x, agent_position[1] - 1] != 1:
+            # FIELD UP AND UP RIGHT/LEFT IS FREE --> GO UP
+            ret = reachable(map, pos, np.array([agent_position[0] + sign_x, agent_position[1] - 1]), step + 2, limit)
+            if ret[0]:
+                return True, 4, ret[2]  # go up
+        if map[agent_position[0], agent_position[1] + 1] != 1 and map[agent_position[0] + sign_x, agent_position[1] + 1] != 1:
+            # FIELD BELOW AND BELOW RIGHT/LEFT IS FREE --> GO UP
+            ret = reachable(map, pos, np.array([agent_position[0] + sign_x, agent_position[1] + 1]), step + 2, limit)
+            if ret[0]:
+                return True, 2, ret[2]  # go down
 
     return False, 0, 0
