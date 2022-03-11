@@ -94,7 +94,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     action_idx_t = get_idx_for_action(last_action)
 
     if e.KILLED_SELF in events:
-        self.Q[idx_t][action_idx_t] += self.alpha * (-100 - self.Q[idx_t][action_idx_t])
+        self.Q[idx_t][action_idx_t] += self.alpha * (-20 - self.Q[idx_t][action_idx_t])
 
     # Store the model
     with open("model.pt", "wb") as file:
@@ -219,13 +219,13 @@ def calculate_reward(events, old_game_state, new_game_state, action) -> int:
 
             if len(previous_coin_positions):
                 # THERE WAS STILL A COIN ON THE FIELD
-                reward_sum -= 25
+                reward_sum -= 4
             elif previous_steps_to_next_crate == 0:
                 # AGENT WAS NEXT TO CRATE
-                reward_sum += 25
+                reward_sum += 4
             else:
                 # AGENT WAS NOT NEXT TO CRATE
-                reward_sum -= 30
+                reward_sum -= 5
     # elif len(current_bomb_positions) > 0:
     elif not can_drop_bomb(old_game_state):
         # THERE WAS AND STILL IS A BOMB/EXPLOSION -> OBJECTIVE: DODGE BOMB/EXPLOSIONS BY MOVING TO SAFE FIELD (OR STAYING THERE)
@@ -246,14 +246,14 @@ def calculate_reward(events, old_game_state, new_game_state, action) -> int:
                 # AGENT KNEW COIN DIRECTION
                 if direction_mapping[previous_safe_field_direction] != action:
                     # AGENT TOOK OTHER ACTION
-                    reward_sum -= 20
+                    reward_sum -= 4
                 else:
                     # AGENT FOLLOWED OUR GUIDANCE
-                    reward_sum += 20
+                    reward_sum += 4
             elif action == 'WAIT':
-                reward_sum += 20
+                reward_sum += 4
             else:
-                reward_sum -= 20
+                reward_sum -= 4
 
             # ret = find_next_safe_field(current_map, current_agent_position)
 
@@ -289,18 +289,23 @@ def calculate_reward(events, old_game_state, new_game_state, action) -> int:
             ret_coins = find_next_coin(previous_map, previous_agent_position, previous_coin_positions)
 
             if ret_coins is not None:
-                # COIN WAS REACHABLE
+                # THERE WAS AT LEAST ONE COIN ON THE FIELD
                 move_to_crate = False
+
+                ret_coins = find_next_coin(previous_map, previous_agent_position, previous_coin_positions)
+
                 previous_coin_direction, previous_steps_to_coin = ret_coins
 
                 if previous_coin_direction != 0 and previous_coin_direction != 5:
                     # AGENT KNEW COIN DIRECTION
                     if direction_mapping[previous_coin_direction] != action:
                         # AGENT TOOK OTHER ACTION
-                        reward_sum -= 20
+                        reward_sum -= 4
                     else:
                         # AGENT FOLLOWED OUR GUIDANCE
-                        reward_sum += 20
+                        reward_sum += 4
+                else:
+                    move_to_crate = True
         if move_to_crate:
             # THERE IS NO COIN/COIN IS NOT REACHABLE -> OBJECTIVE: MOVE TO CRATE
             ret_crates = find_next_crate(previous_map, previous_agent_position, previous_crate_positions)
@@ -313,13 +318,13 @@ def calculate_reward(events, old_game_state, new_game_state, action) -> int:
                     # AGENT KNEW CRATE DIRECTION
                     if direction_mapping[previous_crate_direction] != action:
                         # AGENT TOOK OTHER ACTION
-                        reward_sum -= 20
+                        reward_sum -= 4
                     else:
                         # AGENT FOLLOWED OUR GUIDANCE
-                        reward_sum += 20
+                        reward_sum += 4
                 elif previous_crate_direction == 0 and can_drop_bomb(old_game_state):
                     # AGENT WAS NEXT TO CRATE AND DID NOT DROP BOMB
-                    reward_sum -= 20
+                    reward_sum -= 4
 
                 # ret_crates = find_next_crate(current_map, current_agent_position, current_crate_positions)
 
