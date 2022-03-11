@@ -35,7 +35,7 @@ def setup(self):
         # self.Q = np.ones((16, 4, 4, 6, 2, 16, 4, 4, 6)) * 3
         # self.Q = np.ones((16, 4, 4, 4, 4, 16, 2, 6)) * 3
         # self.Q = np.ones((16, 6, 2, 6, 5, 5, 6)) * 3
-        self.Q = np.ones((6, 2, 6, 5, 2, 6)) * 3
+        self.Q = np.ones((7, 2, 6, 6, 6)) * 3
 
 def act(self, game_state: dict) -> str:
     """
@@ -50,6 +50,7 @@ def act(self, game_state: dict) -> str:
     current_round = game_state["round"]
 
     random_prob = max(.5**(1 + current_round / 40), 0.1)
+    # random_prob = .25
     if self.train and random.random() < random_prob:
         self.logger.debug("Choosing action purely at random.")
         return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
@@ -171,8 +172,9 @@ def is_in_corner(agent_position):
 def get_idx_for_state(game_state: dict):
     our_position = np.array(game_state["self"][3])
     crate_positions = extract_crate_positions(game_state["field"])
-    bomb_positions = np.array([coords for coords, _ in game_state["bombs"]])
+    # bomb_positions = np.array([coords for coords, _ in game_state["bombs"]])
     coin_positions = game_state["coins"]
+    # explosion_map = game_state["explosion_map"]
 
     map = map_game_state_to_image(game_state)
 
@@ -197,16 +199,18 @@ def get_idx_for_state(game_state: dict):
     # neighbor_in_danger_index = get_dangerous_neighbor_index(game_state)
 
     # direction_with_most_crates = find_direction_to_increase_crates_destroyed(game_state)
-    movement_idx = get_movement_indices(our_position, map)
+    # movement_idx = get_movement_indices(our_position, map)
 
-    ret_safe_fields = find_next_safe_field(map, our_position)
-    if ret_safe_fields is None:
-        safe_field_direction_idx = 5
+    if can_drop_bomb(game_state):
+        safe_field_direction_idx = 6
     else:
-        safe_field_direction_idx, _ = ret_safe_fields
+        ret_safe_fields = find_next_safe_field(map, our_position)
+        if ret_safe_fields is None:
+            safe_field_direction_idx = 5
+        else:
+            safe_field_direction_idx, _ = ret_safe_fields
 
-    can_drop_bomb_idx = 1 if can_drop_bomb(bomb_positions, game_state["explosion_map"]) else 0
-    # 1 -
+    can_drop_bomb_idx = 1 if can_drop_bomb(game_state) else 0
 
     ret_crates = find_next_crate(map, our_position, crate_positions)
     if ret_crates is None:
@@ -222,7 +226,7 @@ def get_idx_for_state(game_state: dict):
         coin_direction_idx, _ = ret_coins
 
     # bomb_countdown = 4 if not len(game_state["bombs"]) else game_state["bombs"][0][1]
-    corner_idx = 1 if is_in_corner(our_position) else 0
+    # corner_idx = 1 if is_in_corner(our_position) else 0
 
 
     # return pos_idx, coin_dist_x_idx, coin_dist_y_idx, *crate_indices[0], *bomb_indices[0], expl_idx
@@ -230,11 +234,40 @@ def get_idx_for_state(game_state: dict):
     # return movement_idx, *crate_indices[0], in_bomb_range, neighbor_in_danger_index, *bomb_indices[0]
     # return movement_idx, *crate_indices[0], is_crate_direct_neighbour, next_step_direction_idx, bomb_on_map_idx, next_step_crate_direction_idx
     # return movement_idx, safe_field_direction_idx, can_drop_bomb_idx, crate_direction_idx, coin_direction_idx, bomb_countdown
-    return safe_field_direction_idx, can_drop_bomb_idx, crate_direction_idx, coin_direction_idx, corner_idx#, bomb_countdown
+    return safe_field_direction_idx, can_drop_bomb_idx, crate_direction_idx, coin_direction_idx#, corner_idx#, bomb_countdown
+
+    # SAFE_FIELD_DIRECTION_IDX:
+    # 0: is at safe field
+    # 1: go right
+    # 2: go down
+    # 3: go left
+    # 4: go up
+    # 5: safe field is unreachable
+    # 6: there is no safe field as there is no bomb/explosion
+
+    # CAN_DROP_BOMB_IDX:
+    # 0: can not drop bomb
+    # 1: can drop bomb
+
+    # CRATE_DIRECTION_IDX:
+    # 0: is next to crate
+    # 1: go right
+    # 2: go down
+    # 3: go left
+    # 4: go up
+    # 5: crate is unreachable
+
+    # COIN_DIRECTION_IDX:
+    # 0: no coin on field
+    # 1: go right
+    # 2: go down
+    # 3: go left
+    # 4: go up
+    # 5: coin is unreachable
 
 
-def can_drop_bomb(bomb_positions, explosion_map):
-    return not (len(bomb_positions) > 0 or np.any(explosion_map != 0))
+def can_drop_bomb(game_state):
+    return game_state["self"][2]
 
 
 def is_next_to_crate(agent_position, crate_positions):
@@ -391,7 +424,7 @@ def map_game_state_to_image(game_state):
     field = (game_state["field"]).copy()  # 0: free tiles, 1: crates, -1: stone walls
     field[field == -1] = 1  # stone walls
 
-    field[game_state["explosion_map"] > 1] = 1  # explosions
+    field[game_state["explosion_map"] >= 1] = 1  # explosions
 
     for bomb_pos, bomb_countdown in game_state["bombs"]:
         field[bomb_pos] = 1  # bomb
@@ -404,7 +437,8 @@ def map_game_state_to_image(game_state):
             # insecure field (but still passable)
             for idx in objects_in_bomb_dist(bomb_pos, np.argwhere(field == 0)).tolist():
                 field[tuple(idx)] = 1 + bomb_countdown
-
+    if np.any(field[0, :] == 0)  or np.any(field[16,:] == 0) or np.any(field[:, 0] == 0) or np.any(field[:, 16] == 0):
+        print("asdf")
     return field  # 0: secure, 1: not passable, 2+: passable, but there will be an explosion in the future
 
 
@@ -455,7 +489,7 @@ def find_next_crate(map, agent_position, crate_positions) -> Optional[Tuple[int,
         if is_reachable:
             return next_step_direction, needed_steps-1
         map[crate_positions[idx]] = 1
-    return None
+    return 5, 0
 
 
 def find_next_coin(map, agent_position, coin_positions) -> Optional[Tuple[int, int]]:
@@ -472,10 +506,10 @@ def find_next_coin(map, agent_position, coin_positions) -> Optional[Tuple[int, i
     # sorted_indices = np.argpartition(steps, kth=len(steps) - 1)
 
     for idx in sorted_indices:
-        is_reachable, next_step_direction, needed_steps = reachable(map, coin_positions[idx], agent_position, limit=30)
+        is_reachable, next_step_direction, needed_steps = reachable(map, coin_positions[idx], agent_position, limit=100)
         if is_reachable:
             return next_step_direction, needed_steps
-    return None
+    return 5, 0
 
 
 def reachable(map, pos, agent_position, step=0, limit=3) -> Tuple[bool, int, int]:
@@ -488,12 +522,12 @@ def reachable(map, pos, agent_position, step=0, limit=3) -> Tuple[bool, int, int
         return True, 0, step
 
     if sign_x != 0 and map[agent_position[0] + sign_x, agent_position[1]] != 1:
-        ret = reachable(map, pos, np.array([agent_position[0] + sign_x, agent_position[1]]), step+1)
+        ret = reachable(map, pos, np.array([agent_position[0] + sign_x, agent_position[1]]), step+1, limit)
         if ret[0]:
             return True, 1 if sign_x > 0 else 3, ret[2]
 
     if sign_y != 0 and map[agent_position[0], agent_position[1] + sign_y] != 1:
-        ret = reachable(map, pos, np.array([agent_position[0], agent_position[1] + sign_y]), step + 1)
+        ret = reachable(map, pos, np.array([agent_position[0], agent_position[1] + sign_y]), step+1, limit)
         if ret[0]:
             return True, 4 if sign_y < 0 else 2, ret[2]
 
