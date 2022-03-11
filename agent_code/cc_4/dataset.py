@@ -79,7 +79,7 @@ class GameStateDataset(Dataset):
     def __getitem__(self, index: int) -> T_co:
         if not self.loaded:
             raise ValueError("The data is not loaded. Call load_files() before usage.")
-        if self.augment_data:
+        if not self.augment_data:
             return self.state_t[index], self.action[index], self.reward[index], self.state_t_1[index]
         else:
             return self.get_augmented_item(index)
