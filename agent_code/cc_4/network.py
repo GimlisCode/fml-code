@@ -12,22 +12,22 @@ class QNetwork(pl.LightningModule):
 
         self.conv_layers = torch.nn.Sequential(
             # expected input 18x18
-            torch.nn.Conv2d(in_channels=4, out_channels=16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
+            torch.nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
             torch.nn.ReLU(),
-            torch.nn.BatchNorm2d(16),
-            torch.nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
+            torch.nn.BatchNorm2d(4),
+            torch.nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 18x18
             torch.nn.ReLU(),
-            torch.nn.BatchNorm2d(32),
-            torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),  # 9x9
+            torch.nn.BatchNorm2d(4),
+            torch.nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1)),  # 9x9
             torch.nn.ReLU(),
-            torch.nn.BatchNorm2d(64),
-            torch.nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 9x9
+            torch.nn.BatchNorm2d(4),
+            torch.nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),  # 9x9
             torch.nn.ReLU(),
-            torch.nn.BatchNorm2d(128),
+            torch.nn.BatchNorm2d(4),
         )
 
         self.linear_layers = torch.nn.Sequential(
-            torch.nn.Linear(128 * 9 * 9, 128),
+            torch.nn.Linear(4 * 9 * 9, 128),
             torch.nn.ReLU(),
             torch.nn.BatchNorm1d(128),
             torch.nn.Linear(128, 64),
@@ -44,7 +44,7 @@ class QNetwork(pl.LightningModule):
         self.double()
 
     def forward(self, x: torch.tensor) -> torch.tensor:
-        return self.linear_layers.forward(self.conv_layers.forward(x).view((-1, 128 * 9 * 9)))
+        return self.linear_layers.forward(self.conv_layers.forward(x).view((-1, 4 * 9 * 9)))
 
     def configure_optimizers(self):
         # optimizer = torch.optim.SGD(self.parameters(), lr=self.learning_rate, momentum=0.9)

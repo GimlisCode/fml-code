@@ -25,6 +25,6 @@ if __name__ == "__main__":
         ModelCheckpoint(monitor="val_loss", mode="min")
     ]
 
-    trainer = pl.Trainer(gpus=-1 if torch.cuda.is_available() else 0, max_epochs=25, callbacks=callbacks)
+    trainer = pl.Trainer(gpus=-1 if torch.cuda.is_available() else 0, max_epochs=100, callbacks=callbacks)
     trainer.fit(Q, train_loader, val_loader)
     trainer.save_checkpoint("./final_epoch.ckpt")
