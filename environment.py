@@ -391,7 +391,7 @@ class BombeRLeWorld(GenericWorld):
         for agent, start_position in zip(self.agents, self.rng.permutation(start_positions)):
             active_agents.append(agent)
             agent.x, agent.y = start_position
-
+            # agent.x, agent.y = 1, 1
         return arena, coins, active_agents
 
     def get_state_for_agent(self, agent: Agent):
