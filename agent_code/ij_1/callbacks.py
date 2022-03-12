@@ -49,12 +49,13 @@ class SafeFieldDirection:
 
 
 class NearestAgentDirection:
-    NO_AGENTS = 0
+    IN_BOMB_RANGE = 0
     RIGHT = Direction.RIGHT
     DOWN = Direction.DOWN
     LEFT = Direction.LEFT
     UP = Direction.UP
     UNREACHABLE = Direction.UNREACHABLE
+    NO_AGENTS = 6
 
 
 def setup(self):
@@ -79,8 +80,7 @@ def setup(self):
                 self.Q = pickle.load(file)
                 print("Loaded")
         except (EOFError, FileNotFoundError):
-            # self.Q = np.zeros((7, 2, 7, 6, 6, 6))
-            self.Q = np.zeros((6, 2, 7, 6, 6))
+            self.Q = np.zeros((6, 2, 7, 6, 7, 6))
 
 
 def act(self, game_state: dict) -> str:
@@ -164,7 +164,7 @@ def get_idx_for_state(game_state: dict):
 
     nearest_agent_idx, _ = find_next_agent(game_map, agent_position, other_agent_positions)
 
-    return safe_field_direction_idx, can_drop_bomb_idx, crate_direction_idx, coin_direction_idx  # , nearest_agent_idx
+    return safe_field_direction_idx, can_drop_bomb_idx, crate_direction_idx, coin_direction_idx, nearest_agent_idx
 
 
 def can_drop_bomb(game_state):
@@ -338,6 +338,11 @@ def find_next_agent(game_map, agent_position, other_agent_positions) -> Optional
 
     if not len(other_agent_positions):
         return NearestAgentDirection.NO_AGENTS, np.inf
+
+    agents_in_bomb_range = objects_in_bomb_dist(agent_position, other_agent_positions)
+
+    if len(agents_in_bomb_range) > 0:
+        return NearestAgentDirection.IN_BOMB_RANGE, 0
 
     steps = get_steps_between(agent_position, other_agent_positions)
 

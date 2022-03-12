@@ -55,6 +55,9 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     previous_map = map_game_state_to_image(old_game_state)
     current_map = map_game_state_to_image(new_game_state)
 
+    previous_other_agent_positions = get_other_agent_positions(old_game_state)
+    current_other_agent_positions = get_other_agent_positions(new_game_state)
+
     previous_crate_direction, previous_crate_distance = find_next_crate(previous_map, previous_agent_position,
                                                                         previous_crate_positions)
     current_crate_direction, current_crate_distance = find_next_crate(current_map, current_agent_position,
@@ -70,9 +73,19 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     current_safe_field_direction, current_safe_field_distance = find_next_safe_field(current_map,
                                                                                      current_agent_position)
 
+    previous_other_agent_direction, previous_other_agent_distance = find_next_agent(previous_map,
+                                                                                    previous_agent_position,
+                                                                                    previous_other_agent_positions)
+    current_other_agent_direction, current_other_agent_distance = find_next_agent(current_map,
+                                                                                  current_agent_position,
+                                                                                  current_other_agent_positions)
+
     # --- BOMB DROP ---
     if e.BOMB_DROPPED in events and previous_crate_distance == CrateDirection.NEXT_TO:
-        # AGENT DROPPED A BOMB AND WAS NEXT TO A CRATE -> good
+        # AGENT DROPPED A BOMB AND WAS NEXT TO A CRATE
+        reward_sum += 1
+    if e.BOMB_DROPPED in events and previous_other_agent_distance == NearestAgentDirection.IN_BOMB_RANGE:
+        # AGENT DROPPED A BOMB AND ANOTHER AGENT WAS IN BOMB RANGE
         reward_sum += 1
 
     # --- BOMB DODGE ---
@@ -83,12 +96,6 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         # AGENT DID NOT MOVE CLOSER TO SAFE FIELD AND IS NOT AT SAFE FIELD
         reward_sum -= 4
 
-    if previous_safe_field_direction == SafeFieldDirection.UNREACHABLE:
-        find_next_safe_field(previous_map, previous_agent_position)
-
-    if current_safe_field_direction == SafeFieldDirection.UNREACHABLE:
-        find_next_safe_field(current_map, current_agent_position)
-
     # --- COINS ---
     if previous_coin_distance > current_coin_distance:
         # AGENT MOVED CLOSER TO COIN
@@ -98,5 +105,10 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     if previous_crate_distance > current_crate_distance:
         # AGENT MOVED CLOSER TO CRATE
         reward_sum += 2
+
+    # --- OTHER AGENTS ---
+    if previous_other_agent_distance > current_other_agent_distance:
+        # AGENT MOVED CLOSER TO THE NEAREST OTHER AGENT
+        reward_sum += 1
 
     return reward_sum
