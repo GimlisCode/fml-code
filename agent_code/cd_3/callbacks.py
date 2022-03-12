@@ -84,7 +84,7 @@ def setup(self):
                 self.Q = pickle.load(file)
                 print("Loaded")
         except (EOFError, FileNotFoundError):
-            self.Q = np.ones((7, 2, 7, 6, 6)) * 3
+            self.Q = np.zeros((7, 2, 7, 6, 6))
 
 
 def act(self, game_state: dict) -> str:
