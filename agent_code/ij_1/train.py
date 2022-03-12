@@ -46,8 +46,8 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     previous_agent_position = np.array(old_game_state["self"][3])
     current_agent_position = np.array(new_game_state["self"][3])
 
-    previous_crate_positions = extract_crate_positions(old_game_state["field"])
-    current_crate_positions = extract_crate_positions(new_game_state["field"])
+    previous_crate_positions = get_crate_positions(old_game_state)
+    current_crate_positions = get_crate_positions(new_game_state)
 
     previous_coin_positions = old_game_state["coins"]
     current_coin_positions = new_game_state["coins"]
