@@ -129,6 +129,12 @@ def calculate_reward(events, old_game_state, new_game_state, action) -> int:
         # AGENT DID NOT MOVE CLOSER TO SAFE FIELD AND IS NOT AT SAFE FIELD
         reward_sum -= 4
 
+    if previous_safe_field_direction == SafeFieldDirection.UNREACHABLE:
+        find_next_safe_field(previous_map, previous_agent_position)
+
+    if current_safe_field_direction == SafeFieldDirection.UNREACHABLE:
+        find_next_safe_field(current_map, current_agent_position)
+
     # --- COINS ---
     previous_coin_direction, previous_coin_distance = find_next_coin(previous_map, previous_agent_position, previous_coin_positions)
     current_coin_direction, current_coin_distance = find_next_coin(current_map, current_agent_position, current_coin_positions)

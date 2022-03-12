@@ -268,7 +268,7 @@ def map_game_state_to_image(game_state):
     return field  # 0: secure, 1: not passable, 2+: passable, but there will be an explosion in the future
 
 
-def find_next_safe_field(game_map, agent_position) -> Optional[Tuple[int, int]]:
+def find_next_safe_field(game_map, agent_position, allowed_steps: int = 4) -> Optional[Tuple[int, int]]:
     """
     Returns: next_step_direction, needed_steps
     """
@@ -279,13 +279,14 @@ def find_next_safe_field(game_map, agent_position) -> Optional[Tuple[int, int]]:
 
     steps = np.array(get_steps_between(agent_position, np.argwhere(game_map == 0)))
 
-    reachable_within_3_steps = secure_fields[steps <= 3]
-    steps = steps[steps <= 3]
+    reachable_within_allowed_steps = secure_fields[steps <= allowed_steps]
+    steps = steps[steps <= allowed_steps]
 
     sorted_indices = np.argsort(steps)
 
     for idx in sorted_indices:
-        is_reachable, next_step_direction, needed_steps = reachable(game_map, reachable_within_3_steps[idx], agent_position)
+        is_reachable, next_step_direction, needed_steps = \
+            reachable(game_map, reachable_within_allowed_steps[idx], agent_position, limit=allowed_steps)
         if is_reachable:
             return next_step_direction, needed_steps
 
@@ -335,7 +336,7 @@ def find_next_coin(game_map, agent_position, coin_positions) -> Optional[Tuple[i
     return CoinDirection.UNREACHABLE, np.inf
 
 
-def reachable(game_map, pos, agent_position, step=0, limit=3) -> Tuple[bool, int, int]:
+def reachable(game_map, pos, agent_position, step=0, limit=4) -> Tuple[bool, int, int]:
     sign_x, sign_y = np.sign(pos - agent_position)
     diff_x, diff_y = np.abs(pos - agent_position)
 
