@@ -1,4 +1,5 @@
 from typing import List
+from pathlib import Path
 
 
 import events as e
@@ -9,6 +10,26 @@ from .augmentations import get_all_augmentations
 def setup_training(self):
     self.alpha = 0.2
     self.gamma = 0.5
+
+    self.save_model_every_k_steps = 20
+
+    self.do_augmentations = True
+
+    self.save_snapshots = True
+    self.snap_shot_every_k_steps = 10
+    self.snapshot_folder = Path("snapshots")
+
+    if self.model_number is not None:
+        self.snapshot_folder = self.snapshot_folder.joinpath(self.model_number)
+
+    if self.save_snapshots and not self.snapshot_folder.exists():
+        self.snapshot_folder.mkdir()
+        self.snapshot_idx = self.snap_shot_every_k_steps
+    elif self.save_snapshots:
+        snapshot_numbers = [int(f.name.replace(".pt", "").split("_")[1]) for f in self.snapshot_folder.glob("*.pt")]
+        self.snapshot_idx = max(snapshot_numbers) if len(snapshot_numbers) > 0 else 0 + self.snap_shot_every_k_steps
+    else:
+        self.snapshot_idx = self.snap_shot_every_k_steps
 
 
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):
@@ -23,8 +44,9 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
     update_Q(self, idx_t, action_idx_t, reward, idx_t1)
 
-    for idx_t_augmented, action_idx_t_augmented, idx_t1_augmented in get_all_augmentations(idx_t, action_idx_t, idx_t1):
-        update_Q(self, idx_t_augmented, action_idx_t_augmented, reward, idx_t1_augmented)
+    if self.do_augmentations:
+        for idx_t_augmented, action_idx_t_augmented, idx_t1_augmented in get_all_augmentations(idx_t, action_idx_t, idx_t1):
+            update_Q(self, idx_t_augmented, action_idx_t_augmented, reward, idx_t1_augmented)
 
 
 def update_Q(self, idx_t, action_idx, reward, idx_t1):
@@ -32,12 +54,14 @@ def update_Q(self, idx_t, action_idx, reward, idx_t1):
 
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
-    if self.model_number is not None:
-        with open(f"model{self.model_number}.pt", "wb") as file:
+    if last_game_state["round"] % self.save_model_every_k_steps == 0:
+        with open(f"model{self.model_number if self.model_number is not None else ''}.pt", "wb") as file:
             pickle.dump(self.Q, file)
-    else:
-        with open(f"model.pt", "wb") as file:
+
+    if self.save_snapshots and last_game_state["round"] % self.snap_shot_every_k_steps == 0:
+        with open(self.snapshot_folder.joinpath(f"model_{self.snapshot_idx}.pt"), "wb") as file:
             pickle.dump(self.Q, file)
+        self.snapshot_idx += self.snap_shot_every_k_steps
 
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
