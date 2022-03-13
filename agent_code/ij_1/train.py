@@ -99,7 +99,7 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         reward_sum += 1
     if e.BOMB_DROPPED in events and not next_to_crate and not in_bomb_range:
         # AGENT DROPPED A BOMB BUT THERE WAS NO TARGET
-        reward_sum -= 2
+        reward_sum -= 5
 
     # --- BOMB DODGE ---
     if previous_safe_field_distance > current_safe_field_distance and current_safe_field_direction != SafeFieldDirection.UNREACHABLE:
