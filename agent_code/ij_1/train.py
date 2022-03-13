@@ -36,7 +36,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
 def calculate_reward(events, old_game_state, new_game_state) -> int:
     game_rewards = {
         e.INVALID_ACTION: -2,
-        e.COIN_COLLECTED: 3
+        e.COIN_COLLECTED: 4
     }
     reward_sum = 0
     for event in events:
@@ -91,24 +91,24 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     # --- BOMB DODGE ---
     if previous_safe_field_distance > current_safe_field_distance and current_safe_field_direction != SafeFieldDirection.UNREACHABLE:
         # AGENT MOVED CLOSER TO SAFE FIELD
-        reward_sum += 4
+        reward_sum += 5
     elif current_safe_field_direction != SafeFieldDirection.IS_AT and e.BOMB_DROPPED not in events:
         # AGENT DID NOT MOVE CLOSER TO SAFE FIELD AND IS NOT AT SAFE FIELD
-        reward_sum -= 4
+        reward_sum -= 9  # as the other positive reward can at most sum up to 9 in this case
 
     # --- COINS ---
     if previous_coin_distance > current_coin_distance:
         # AGENT MOVED CLOSER TO COIN
-        reward_sum += 3
+        reward_sum += 4
 
     # --- CRATES ---
     if previous_crate_distance > current_crate_distance:
         # AGENT MOVED CLOSER TO CRATE
-        reward_sum += 2
+        reward_sum += 3
 
     # --- OTHER AGENTS ---
     if previous_other_agent_distance > current_other_agent_distance:
         # AGENT MOVED CLOSER TO THE NEAREST OTHER AGENT
-        reward_sum += 1
+        reward_sum += 2
 
     return reward_sum
