@@ -107,7 +107,8 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         reward_sum += 5
     elif current_safe_field_direction != SafeFieldDirection.IS_AT and e.BOMB_DROPPED not in events:
         # AGENT DID NOT MOVE CLOSER TO SAFE FIELD AND IS NOT AT SAFE FIELD
-        reward_sum -= 9  # as the other positive reward can at most sum up to 9 in this case
+        reward_sum -= 18    # as the other positive reward can at most sum up to 9 but combined with alpha 0,5 the
+        # punishment must be greater than 2 * 9 such that it is not less than 9
 
     # --- COINS ---
     if previous_coin_distance > current_coin_distance:
