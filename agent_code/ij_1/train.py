@@ -3,6 +3,7 @@ from typing import List
 
 import events as e
 from .callbacks import *
+from .augmentations import get_all_augmentations
 
 
 def setup_training(self):
@@ -20,8 +21,14 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     idx_t1 = get_idx_for_state(new_game_state)
     action_idx_t = get_idx_for_action(self_action)
 
-    self.Q[idx_t][action_idx_t] += self.alpha * (
-                reward + self.gamma * np.max(self.Q[idx_t1]) - self.Q[idx_t][action_idx_t])
+    update_Q(self, idx_t, action_idx_t, reward, idx_t1)
+
+    for idx_t_augmented, action_idx_t_augmented, idx_t1_augmented in get_all_augmentations(idx_t, action_idx_t, idx_t1):
+        update_Q(self, idx_t_augmented, action_idx_t_augmented, reward, idx_t1_augmented)
+
+
+def update_Q(self, idx_t, action_idx, reward, idx_t1):
+    self.Q[idx_t][action_idx] += self.alpha * (reward + self.gamma * np.max(self.Q[idx_t1]) - self.Q[idx_t][action_idx])
 
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
