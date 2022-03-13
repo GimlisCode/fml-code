@@ -81,10 +81,10 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
                                                                                   current_other_agent_positions)
 
     # --- BOMB DROP ---
-    if e.BOMB_DROPPED in events and previous_crate_distance == CrateDirection.NEXT_TO:
+    if e.BOMB_DROPPED in events and previous_crate_direction == CrateDirection.NEXT_TO:
         # AGENT DROPPED A BOMB AND WAS NEXT TO A CRATE
         reward_sum += 1
-    if e.BOMB_DROPPED in events and previous_other_agent_distance == NearestAgentDirection.IN_BOMB_RANGE:
+    if e.BOMB_DROPPED in events and previous_other_agent_direction == NearestAgentDirection.IN_BOMB_RANGE:
         # AGENT DROPPED A BOMB AND ANOTHER AGENT WAS IN BOMB RANGE
         reward_sum += 1
 
