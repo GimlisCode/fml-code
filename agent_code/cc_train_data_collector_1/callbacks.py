@@ -64,7 +64,7 @@ def act(self, game_state: dict) -> str:
     """
     current_round = game_state["round"]
 
-    random_prob = max(.5**(1 + current_round / 100), 0.1)
+    random_prob = 0.2
     if self.train and random.random() < random_prob:
         self.logger.debug("Choosing action purely at random.")
         return np.random.choice(MOVE_ACTIONS)

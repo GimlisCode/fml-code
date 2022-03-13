@@ -33,5 +33,7 @@ def plot_tensorboard_loss(version):
 
 
 if __name__ == '__main__':
-    plot_tensorboard_loss(19)
-    plot_tensorboard_loss(20)
+    plot_tensorboard_loss(21)  # aug
+    plot_tensorboard_loss(22)  # aug no bias
+    plot_tensorboard_loss(23)  # no bias
+    plot_tensorboard_loss(24)  # pure

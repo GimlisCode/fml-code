@@ -11,7 +11,7 @@ MOVE_ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT']
 
 def setup(self):
     self.Q = QNetwork(features_out=4)
-    self.Q.load("model.pt")
+    self.Q.load_from_pl_checkpoint("final_epoch.ckpt")
     self.Q.eval()
 
 

@@ -17,11 +17,13 @@ from agent_code.cc_4.augmentations import (
 
 
 class GameStateDataset(Dataset):
-    def __init__(self, files: list, device: torch.device = None, load: bool = True, augment_data: bool = False):
+    def __init__(self, files: list, device: torch.device = None, load: bool = True, augment_data: bool = False,
+                 overcome_bias: bool = False):
         self.files = files
         self.device = device
         self.augment_data = augment_data
         random.shuffle(self.files)
+        self.overcome_bias = overcome_bias
 
         self.state_t = list()
         self.state_t_1 = list()
@@ -29,6 +31,8 @@ class GameStateDataset(Dataset):
         self.reward = list()
 
         if load:
+            if self.overcome_bias:
+                self.try_to_overcome_bias()
             self.load_files()
             self._move_data_to(device)
             self.loaded = True
@@ -37,12 +41,13 @@ class GameStateDataset(Dataset):
 
     @staticmethod
     def from_data_path(data_path: str, device: torch.device = None, load: bool = True,
-                       augment_data: bool = False) -> "GameStateDataset":
+                       augment_data: bool = False, overcome_bias: bool = False) -> "GameStateDataset":
         return GameStateDataset(
             list(Path(data_path).glob("*.tif")),
             device=device,
             load=load,
-            augment_data=augment_data
+            augment_data=augment_data,
+            overcome_bias=overcome_bias
         )
 
     def load_files(self):
@@ -149,6 +154,7 @@ class GameStateDataset(Dataset):
         val_data = self.files[split_idx:]
 
         return (
-            GameStateDataset(train_data, device=self.device, load=True, augment_data=self.augment_data),
-            GameStateDataset(val_data, device=self.device, load=True)
+            GameStateDataset(train_data, device=self.device, load=True, augment_data=self.augment_data,
+                             overcome_bias=self.overcome_bias),
+            GameStateDataset(val_data, device=self.device, load=True, overcome_bias=self.overcome_bias)
         )
