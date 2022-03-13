@@ -61,24 +61,24 @@ class NearestAgentDirection:
 def setup(self):
     self.model_number = None
     try:
-        with open("modelList.txt", "r") as model_file:
-            model_list = model_file.readline().split(",")
-            tmp2 = model_list.pop(0)
-            model_list.append(tmp2)
-            self.model_number = tmp2
-
-        with open("modelList.txt", "w") as model_file:
-            model_file.write(",".join(model_list))
-
-        with open(f"model{self.model_number}", "rb") as file:
+        with open("model.pt", "rb") as file:
             self.Q = pickle.load(file)
-            print(f"Loaded: {self.model_number}")
+            print("Loaded")
 
     except (EOFError, FileNotFoundError):
         try:
-            with open("model.pt", "rb") as file:
+            with open("modelList.txt", "r") as model_file:
+                model_list = model_file.readline().split(",")
+                tmp2 = model_list.pop(0)
+                model_list.append(tmp2)
+                self.model_number = tmp2
+
+            with open("modelList.txt", "w") as model_file:
+                model_file.write(",".join(model_list))
+
+            with open(f"model{self.model_number}", "rb") as file:
                 self.Q = pickle.load(file)
-                print("Loaded")
+                print(f"Loaded: {self.model_number}")
         except (EOFError, FileNotFoundError):
             self.Q = np.zeros((6, 2, 7, 6, 7, 6))
 
@@ -86,7 +86,7 @@ def setup(self):
 def act(self, game_state: dict) -> str:
     current_round = game_state["round"]
 
-    random_prob = max(.5**(1 + current_round / 40), 0.1)
+    random_prob = max(.5**(1 + current_round / 50), 0.1)
     if self.train and random.random() < random_prob:
         self.logger.debug("Choosing action purely at random.")
         return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
