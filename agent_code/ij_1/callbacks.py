@@ -64,6 +64,13 @@ def setup(self):
         with open("model.pt", "rb") as file:
             self.Q = pickle.load(file)
             print("Loaded")
+        with open("modelList.txt", "r") as model_file:
+            model_list = model_file.readline().split(",")
+            tmp2 = model_list.pop(0)
+            model_list.append(tmp2)
+            self.model_number = tmp2
+        with open("modelList.txt", "w") as model_file:
+            model_file.write(",".join(model_list))
 
     except (EOFError, FileNotFoundError):
         try:
@@ -72,10 +79,8 @@ def setup(self):
                 tmp2 = model_list.pop(0)
                 model_list.append(tmp2)
                 self.model_number = tmp2
-
             with open("modelList.txt", "w") as model_file:
                 model_file.write(",".join(model_list))
-
             with open(f"model{self.model_number}", "rb") as file:
                 self.Q = pickle.load(file)
                 print(f"Loaded: {self.model_number}")
