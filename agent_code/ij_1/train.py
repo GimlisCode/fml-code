@@ -23,7 +23,11 @@ def setup_training(self):
         self.snapshot_folder = self.snapshot_folder.joinpath(self.model_number)
 
     if self.save_snapshots and not self.snapshot_folder.exists():
-        self.snapshot_folder.mkdir()
+        try:
+            self.snapshot_folder.mkdir()
+        except FileNotFoundError:
+            self.snapshot_folder.parent.mkdir()
+            self.snapshot_folder.mkdir()
         self.snapshot_idx = self.snap_shot_every_k_steps
     elif self.save_snapshots:
         snapshot_numbers = [int(f.name.replace(".pt", "").split("_")[1]) for f in self.snapshot_folder.glob("*.pt")]
