@@ -29,7 +29,12 @@ class TrainDataPoint:
 
     @staticmethod
     def from_dict(obj: dict):
-        return TrainDataPoint(obj["state_features_t"], obj["action"], obj["reward"], obj["state_features_t_plus_1"])
+        return TrainDataPoint(
+            tuple(obj["state_features_t"]),
+            obj["action"],
+            obj["reward"],
+            tuple(obj["state_features_t_plus_1"])
+        )
 
     def __eq__(self, other):
         if hash(self) == hash(other):
