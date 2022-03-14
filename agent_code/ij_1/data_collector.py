@@ -1,13 +1,19 @@
+from typing import List
 from pathlib import Path
 import json
 
 
 class DataCollector:
-    def __init__(self, train_data_path: str = "."):
-        self.train_data_path = Path(train_data_path)
+    def __init__(self, folder: str = ".", filename: str = "data.json"):
+        self.train_data_path = Path(folder)
+
+        if not self.train_data_path.exists():
+            self.train_data_path.mkdir()
+
+        self.filename = filename
 
         try:
-            with open(self.train_data_path.joinpath("data.json"), "r") as file:
+            with open(self.train_data_path.joinpath(filename), "r") as file:
                 self.data = set([TrainDataPoint.from_dict(x) for x in json.loads(file.read())["data"]])
         except FileNotFoundError:
             self.data = set()
@@ -16,8 +22,17 @@ class DataCollector:
         self.data.add(TrainDataPoint(state_features_t, action, reward, state_features_t_plus_1))
 
     def save(self):
-        with open(self.train_data_path.joinpath("data.json"), "w") as file:
+        with open(self.train_data_path.joinpath(self.filename), "w") as file:
             file.write(json.dumps({"data": [x.as_dict() for x in self.data]}))
+
+    @staticmethod
+    def combine(files: List[str], save_to: str):
+        data = set()
+        for collector in [DataCollector(str(Path(file).parent.absolute()), Path(file).name) for file in files]:
+            data += collector.data
+
+        with open(save_to, "w") as file:
+            file.write(json.dumps({"data": [x.as_dict() for x in data]}))
 
 
 class TrainDataPoint:

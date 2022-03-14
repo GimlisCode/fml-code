@@ -37,10 +37,12 @@ def setup_training(self):
         self.snapshot_idx = self.snap_shot_every_k_steps
 
     self.save_train_data = True
-    self.save_train_data = self.save_train_data and self.model_number is None
 
     if self.save_train_data:
-        self.train_data_collector = DataCollector()
+        self.train_data_collector = DataCollector(
+            folder="train_data",
+            filename=f"train_data{self.model_number if self.model_number is not None else ''}.json"
+        )
     else:
         self.train_data_collector = None
 
