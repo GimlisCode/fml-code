@@ -185,4 +185,15 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         # AGENT MOVED CLOSER TO THE NEAREST OTHER AGENT
         reward_sum += 2
 
+    # --- UNDEFINED BEHAVIOUR STATES ---
+    # should be learned by the agent itself
+    # undefined_state = (
+    #         previous_coin_direction == CoinDirection.UNREACHABLE_OR_NONE
+    #         and previous_crate_direction == CrateDirection.UNREACHABLE_OR_NONE
+    #         and previous_other_agent_direction == NearestAgentDirection.UNREACHABLE_OR_NONE
+    #         and previous_safe_field_direction == SafeFieldDirection.IS_AT
+    # )
+    # if undefined_state and e.WAITED in events:
+    #     reward_sum += 1
+
     return reward_sum
