@@ -58,6 +58,19 @@ def update_Q(self, idx_t, action_idx, reward, idx_t1):
 
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
+    last_game_map = map_game_state_to_image(last_game_state)
+    last_agent_position = np.array(last_game_state["self"][3])
+    agent_died = e.KILLED_SELF in events or e.GOT_KILLED in events
+
+    if agent_died and last_game_map[last_agent_position[0], last_agent_position[1]] == 0:
+        # THE AGENT DIED AND WAS ON A SAVE FIELD BEFORE HE MOVED
+        action_idx = get_idx_for_action(last_action)
+        if action_idx < 4:
+            # IF HE ACTIVELY MOVED INTO AN EXPLOSION UPDATE Q WITH A NEGATIVE REWARD
+            reward = -5
+            idx_t = get_idx_for_state(last_game_state)
+            self.Q[idx_t][action_idx] += self.alpha * (reward - self.Q[idx_t][action_idx])
+
     if last_game_state["round"] % self.save_model_every_k_steps == 0:
         with open(f"model{self.model_number if self.model_number is not None else ''}.pt", "wb") as file:
             pickle.dump(self.Q, file)
