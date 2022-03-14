@@ -5,6 +5,7 @@ from pathlib import Path
 import events as e
 from .callbacks import *
 from .augmentations import get_all_augmentations
+from .data_collector import DataCollector
 
 
 def setup_training(self):
@@ -35,6 +36,14 @@ def setup_training(self):
     else:
         self.snapshot_idx = self.snap_shot_every_k_steps
 
+    self.save_train_data = True
+    self.save_train_data = self.save_train_data and self.model_number is None
+
+    if self.save_train_data:
+        self.train_data_collector = DataCollector()
+    else:
+        self.train_data_collector = None
+
 
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):
     if old_game_state is None:
@@ -46,11 +55,17 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     idx_t1 = get_idx_for_state(new_game_state)
     action_idx_t = get_idx_for_action(self_action)
 
+    if self.train_data_collector is not None:
+        self.train_data_collector.add(idx_t, action_idx_t, reward, idx_t1)
+
     update_Q(self, idx_t, action_idx_t, reward, idx_t1)
 
     if self.do_augmentations:
         for idx_t_augmented, action_idx_t_augmented, idx_t1_augmented in get_all_augmentations(idx_t, action_idx_t, idx_t1):
             update_Q(self, idx_t_augmented, action_idx_t_augmented, reward, idx_t1_augmented)
+
+            if self.train_data_collector is not None:
+                self.train_data_collector.add(idx_t_augmented, action_idx_t_augmented, reward, idx_t1_augmented)
 
 
 def update_Q(self, idx_t, action_idx, reward, idx_t1):
@@ -79,6 +94,9 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
         with open(self.snapshot_folder.joinpath(f"model_{self.snapshot_idx}.pt"), "wb") as file:
             pickle.dump(self.Q, file)
         self.snapshot_idx += self.snap_shot_every_k_steps
+
+    if self.train_data_collector is not None:
+        self.train_data_collector.save()
 
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
