@@ -94,17 +94,17 @@ def setup(self):
     if self.Q is not None and np.sum(self.Q) > 0:
         print("Loaded")
 
-    train_data_path = Path("train_data")
+    self.train_data_path = Path("train_data")
 
-    if not train_data_path.exists():
-        train_data_path.mkdir()
+    if not self.train_data_path.exists():
+        self.train_data_path.mkdir()
 
-    idx_so_far = [int(f.name.split("_")[0]) for f in train_data_path.glob("*.tif")]
+    idx_so_far = [int(f.name.split("_")[0]) for f in self.train_data_path.glob("*.tif")]
 
     self.img_idx = 0 if len(idx_so_far) == 0 else max(idx_so_far) + 1
 
     try:
-        with open("train_data_new/meta_info.json", "r") as file:
+        with open(self.train_data_path.joinpath("meta_info.json"), "r") as file:
             self.meta_info = [TrainDataPoint.from_dict(x) for x in json.loads(file.read())["meta_info"]]
     except FileNotFoundError:
         self.meta_info = list()

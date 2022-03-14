@@ -64,7 +64,8 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
         new_game_state_img = map_game_state_to_multichannel_image(new_game_state)
 
         img = np.concatenate((old_game_state_img, new_game_state_img))
-        tifffile.imsave(f"train_data/{self.img_idx}_{get_idx_for_action(self_action)}_{reward}.tif", img)
+        tifffile.imsave(self.train_data_path.joinpath(f"{self.img_idx}_{get_idx_for_action(self_action)}_{reward}.tif"),
+                        img)
         self.img_idx += 1
         self.meta_info.append(train_element_meta_info)
 
@@ -95,6 +96,9 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
         with open(self.snapshot_folder.joinpath(f"model_{self.snapshot_idx}.pt"), "wb") as file:
             pickle.dump(self.Q, file)
         self.snapshot_idx += self.snap_shot_every_k_steps
+
+    with open(self.train_data_path.joinpath("meta_info.json"), "w") as file:
+        file.write(json.dumps({"meta_info": [x.as_dict() for x in self.meta_info]}))
 
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
