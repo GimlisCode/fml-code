@@ -13,7 +13,7 @@ def setup_training(self):
     self.alpha = 0.2
     self.gamma = 0.5
 
-    self.save_model_every_k_steps = 50
+    self.save_model_every_k_steps = 10
 
     self.do_augmentations = True
 

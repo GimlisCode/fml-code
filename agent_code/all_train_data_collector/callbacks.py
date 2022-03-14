@@ -62,10 +62,11 @@ class NearestAgentDirection:
 
 def setup(self):
     self.model_number = None
+    self.Q = None
+
     try:
         with open("model.pt", "rb") as file:
             self.Q = pickle.load(file)
-            print("Loaded")
         with open("modelList.txt", "r") as model_file:
             model_list = model_file.readline().split(",")
             tmp2 = model_list.pop(0)
@@ -87,7 +88,11 @@ def setup(self):
                 self.Q = pickle.load(file)
                 print(f"Loaded: {self.model_number}")
         except (EOFError, FileNotFoundError):
-            self.Q = np.zeros((6, 2, 7, 6, 7, 6))
+            if self.Q is None:
+                self.Q = np.zeros((6, 2, 7, 6, 7, 6))
+
+    if self.Q is not None and np.sum(self.Q) > 0:
+        print("Loaded")
 
     train_data_path = Path("train_data")
 
@@ -108,7 +113,7 @@ def setup(self):
 def act(self, game_state: dict) -> str:
     current_round = game_state["round"]
 
-    random_prob = max(.5**(1 + current_round / 50), 0.1)
+    random_prob = max(.5**(1 + current_round / 50), 0.2)
     if self.train and random.random() < random_prob:
         self.logger.debug("Choosing action purely at random.")
         return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
