@@ -2,6 +2,7 @@ import pickle
 import random
 from typing import Tuple, Optional
 
+import pathlib
 import numpy as np
 from scipy.spatial.distance import cityblock
 
@@ -87,7 +88,7 @@ def setup(self):
                 self.Q = np.zeros((6, 2, 6, 5, 6, 6))
 
     if np.sum(self.Q) != 0:
-        print("Loaded")
+        print(f"Loaded: {pathlib.Path(__file__).parent.name}")
 
 
 def act(self, game_state: dict) -> str:
