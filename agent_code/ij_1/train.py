@@ -15,7 +15,7 @@ def setup_training(self):
 
     self.do_augmentations = True
 
-    self.save_snapshots = True
+    self.save_snapshots = False
     self.snap_shot_every_k_steps = 10
     self.snapshot_folder = Path("snapshots")
 
@@ -65,7 +65,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     if agent_died and last_game_map[last_agent_position[0], last_agent_position[1]] == 0:
         # THE AGENT DIED AND WAS ON A SAVE FIELD BEFORE HE MOVED
         action_idx = get_idx_for_action(last_action)
-        if action_idx < 4:
+        if action_idx < 4: # < 4 means he moved somehow into his death
             # IF HE ACTIVELY MOVED INTO AN EXPLOSION UPDATE Q WITH A NEGATIVE REWARD
             reward = -5
             idx_t = get_idx_for_state(last_game_state)
@@ -152,7 +152,7 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         # punishment must be greater than 2 * 9 such that it is not less than 9
 
     # --- COINS ---
-    if previous_coin_distance > current_coin_distance:
+    if previous_coin_distance > current_coin_distance and not np.isinf(previous_coin_distance):
         # AGENT MOVED CLOSER TO COIN
         reward_sum += 4
 
