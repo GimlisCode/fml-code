@@ -86,17 +86,17 @@ def setup(self):
             if self.Q is None:
                 self.Q = np.zeros((6, 2, 6, 5, 6, 6))
 
-    if self.Q is not None and np.sum(self.Q) > 0:
+    if np.sum(self.Q) != 0:
         print("Loaded")
 
 
 def act(self, game_state: dict) -> str:
     current_round = game_state["round"]
 
-    # random_prob = max(.5**(1 + current_round / 50), 0.1)
-    # if self.train and random.random() < random_prob:
-    #     self.logger.debug("Choosing action purely at random.")
-    #     return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
+    random_prob = max(.5**(1 + current_round / 50), 0.1)
+    if self.train and random.random() < random_prob:
+        self.logger.debug("Choosing action purely at random.")
+        return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
 
     self.logger.debug("Querying model for action.")
     return ACTIONS[np.argmax(self.Q[get_idx_for_state(game_state)])]
