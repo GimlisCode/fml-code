@@ -39,11 +39,11 @@ class GameStateDataset(Dataset):
         for filename in self.files:
             img = torch.tensor(tifffile.imread(filename))
 
-            state_t = torch.zeros((8, 18, 18), dtype=torch.double)
-            state_t_1 = torch.zeros((8, 18, 18), dtype=torch.double)
+            state_t = torch.zeros((9, 18, 18), dtype=torch.double)
+            state_t_1 = torch.zeros((9, 18, 18), dtype=torch.double)
 
-            state_t[:, 0:-1, 0:-1] = img[:8]
-            state_t_1[:, 0:-1, 0:-1] = img[8:]
+            state_t[:, 0:-1, 0:-1] = img[:9]
+            state_t_1[:, 0:-1, 0:-1] = img[9:]
 
             _, action, reward = filename.name.replace(".tif", "").split("_")
 

@@ -49,13 +49,19 @@ def map_game_state_to_multichannel_image(game_state):
     for other_agent in get_other_agent_positions(game_state):
         channel_other_players[other_agent[0], other_agent[1]] = 1
 
+    channel_bombs = np.zeros_like(map)
+    for bomb_pos, bomb_countdown in game_state["bombs"]:
+        # giving countdown 0 (exploding next step) the 1
+        # and countdowns 1-3 values below 1 but greater 0 (therefore / 3.1)
+        channel_bombs[bomb_pos[0], bomb_pos[1]] = 1 - (bomb_countdown / 3.1)
+
     channel_explosions = np.zeros_like(map)
     channel_explosions[game_state["explosion_map"] >= 1] = 1
 
     channel_more_infos = np.zeros_like(map)
     channel_more_infos[0, 0] = 1 if can_drop_bomb(game_state) else 0
 
-    img = torch.zeros((1, 8, 18, 18), dtype=torch.double)
+    img = torch.zeros((1, 9, 18, 18), dtype=torch.double)
     img[0, :, 0:-1, 0:-1] = torch.tensor(np.stack((
         channel_free_tiles,
         channel_walls,
@@ -63,6 +69,7 @@ def map_game_state_to_multichannel_image(game_state):
         channel_coins,
         channel_crates,
         channel_other_players,
+        channel_bombs,
         channel_explosions,
         channel_more_infos
     )))
