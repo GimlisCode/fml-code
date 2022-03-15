@@ -11,7 +11,7 @@ ACTIONS = ['UP', 'RIGHT', 'DOWN', 'LEFT', 'WAIT', 'BOMB']
 def setup(self):
     self.Q = RegressionForest(6)
 
-    data_loader = DataCollector()
+    data_loader = DataCollector(filename="combined_data.json")
 
     state_t = list()
     action = list()

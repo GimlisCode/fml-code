@@ -1,7 +1,7 @@
 import numpy as np
 
 from sklearn.linear_model import LinearRegression
-
+from sklearn.tree import DecisionTreeRegressor
 from agent_code.regression_tree_agent.regression_tree import RegressionTree
 from agent_code.ij_1.data_collector import DataCollector
 
@@ -9,7 +9,8 @@ from agent_code.ij_1.data_collector import DataCollector
 class RegressionForest:
     def __init__(self, num_of_actions):
         # self.trees = [RegressionTree() for i in range(num_of_actions)]
-        self.trees = [LinearRegression() for i in range(num_of_actions)]
+        # self.trees = [LinearRegression() for i in range(num_of_actions)]
+        self.trees = [DecisionTreeRegressor() for i in range(num_of_actions)]
 
     def train(self, state_t, action, reward, n_min=2):
         for action_idx, tree in enumerate(self.trees):
@@ -27,7 +28,7 @@ class RegressionForest:
 if __name__ == '__main__':
     Q = RegressionForest(6)
 
-    data_loader = DataCollector()
+    data_loader = DataCollector(filename="combined_data.json")
 
     state_t = list()
     action = list()

@@ -29,7 +29,7 @@ class DataCollector:
     def combine(files: List[str], save_to: str):
         data = set()
         for collector in [DataCollector(str(Path(file).parent.absolute()), Path(file).name) for file in files]:
-            data += collector.data
+            data = data.union(collector.data)
 
         with open(save_to, "w") as file:
             file.write(json.dumps({"data": [x.as_dict() for x in data]}))
