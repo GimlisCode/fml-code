@@ -171,21 +171,33 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         reward_sum -= 18    # as the other positive reward can at most sum up to 9 but combined with alpha 0,5 the
         # punishment must be greater than 2 * 9 such that it is not less than 9
 
+    agent_moved = not (e.BOMB_DROPPED in events or e.WAITED in events or e.INVALID_ACTION in events)
+
     # --- COINS ---
-    if previous_coin_distance > current_coin_distance:
+    if previous_coin_distance > current_coin_distance and not np.isinf(previous_coin_distance) and agent_moved:
         # AGENT MOVED CLOSER TO COIN
         reward_sum += 4
 
     # --- CRATES ---
-    if previous_crate_distance > current_crate_distance:
+    if previous_crate_distance > current_crate_distance and agent_moved:
         # AGENT MOVED CLOSER TO CRATE
         reward_sum += 3
 
     # --- OTHER AGENTS ---
-    agent_moved = not (e.BOMB_DROPPED in events or e.WAITED in events or e.INVALID_ACTION in events)
     if previous_other_agent_distance > current_other_agent_distance and agent_moved:
         # AGENT MOVED CLOSER TO THE NEAREST OTHER AGENT
         reward_sum += 2
+
+    # --- UNDEFINED BEHAVIOUR STATES ---
+    # should be learned by the agent itself
+    # undefined_state = (
+    #         previous_coin_direction == CoinDirection.UNREACHABLE_OR_NONE
+    #         and previous_crate_direction == CrateDirection.UNREACHABLE_OR_NONE
+    #         and previous_other_agent_direction == NearestAgentDirection.UNREACHABLE_OR_NONE
+    #         and previous_safe_field_direction == SafeFieldDirection.IS_AT
+    # )
+    # if undefined_state and e.WAITED in events:
+    #     reward_sum += 1
 
     return reward_sum
 

@@ -23,12 +23,11 @@ class Direction:
 
 
 class CoinDirection:
-    NO_COIN = 0
+    UNREACHABLE_OR_NONE = 0
     RIGHT = Direction.RIGHT
     DOWN = Direction.DOWN
     LEFT = Direction.LEFT
     UP = Direction.UP
-    UNREACHABLE = Direction.UNREACHABLE
 
 
 class CrateDirection:
@@ -37,8 +36,7 @@ class CrateDirection:
     DOWN = Direction.DOWN
     LEFT = Direction.LEFT
     UP = Direction.UP
-    UNREACHABLE = Direction.UNREACHABLE
-    NO_CRATES = 6
+    UNREACHABLE_OR_NONE = Direction.UNREACHABLE
 
 
 class SafeFieldDirection:
@@ -56,8 +54,7 @@ class NearestAgentDirection:
     DOWN = Direction.DOWN
     LEFT = Direction.LEFT
     UP = Direction.UP
-    UNREACHABLE = Direction.UNREACHABLE
-    NO_AGENTS = 6
+    UNREACHABLE_OR_NONE = Direction.UNREACHABLE
 
 
 def setup(self):
@@ -89,10 +86,10 @@ def setup(self):
                 print(f"Loaded: {self.model_number}")
         except (EOFError, FileNotFoundError):
             if self.Q is None:
-                self.Q = np.zeros((6, 2, 7, 6, 7, 6))
+                self.Q = np.zeros((6, 2, 6, 5, 6, 6))
 
-    if self.Q is not None and np.sum(self.Q) > 0:
-        print("Loaded")
+    if np.sum(self.Q) != 0:
+        print(f"Loaded: {Path(__file__).parent.name}")
 
     self.train_data_path = Path("train_data")
 
@@ -321,7 +318,7 @@ def find_next_crate(game_map, agent_position, crate_positions) -> Optional[Tuple
     """
 
     if not len(crate_positions):
-        return CrateDirection.NO_CRATES, np.inf
+        return CrateDirection.UNREACHABLE_OR_NONE, np.inf
 
     steps = get_steps_between(agent_position, crate_positions)
 
@@ -336,7 +333,7 @@ def find_next_crate(game_map, agent_position, crate_positions) -> Optional[Tuple
         game_map[crate_positions[idx][0], crate_positions[idx][1]] = 1
         if is_reachable:
             return next_step_direction, needed_steps-1
-    return CrateDirection.UNREACHABLE, 0
+    return CrateDirection.UNREACHABLE_OR_NONE, np.inf
 
 
 def find_next_coin(game_map, agent_position, coin_positions) -> Optional[Tuple[int, int]]:
@@ -345,7 +342,7 @@ def find_next_coin(game_map, agent_position, coin_positions) -> Optional[Tuple[i
     """
 
     if not len(coin_positions):
-        return CoinDirection.NO_COIN, np.inf
+        return CoinDirection.UNREACHABLE_OR_NONE, np.inf
 
     steps = get_steps_between(agent_position, coin_positions)
 
@@ -355,7 +352,7 @@ def find_next_coin(game_map, agent_position, coin_positions) -> Optional[Tuple[i
         is_reachable, next_step_direction, needed_steps = reachable(game_map, coin_positions[idx], agent_position, limit=100)
         if is_reachable:
             return next_step_direction, needed_steps
-    return CoinDirection.UNREACHABLE, np.inf
+    return CoinDirection.UNREACHABLE_OR_NONE, np.inf
 
 
 def find_next_agent(game_map, agent_position, other_agent_positions) -> Optional[Tuple[int, int]]:
@@ -364,7 +361,7 @@ def find_next_agent(game_map, agent_position, other_agent_positions) -> Optional
     """
 
     if not len(other_agent_positions):
-        return NearestAgentDirection.NO_AGENTS, np.inf
+        return NearestAgentDirection.UNREACHABLE_OR_NONE, np.inf
 
     agents_in_bomb_range = objects_in_bomb_dist(agent_position, other_agent_positions)
 
@@ -381,7 +378,7 @@ def find_next_agent(game_map, agent_position, other_agent_positions) -> Optional
         game_map[other_agent_positions[idx][0], other_agent_positions[idx][1]] = 1
         if is_reachable:
             return next_step_direction, needed_steps - 1
-    return NearestAgentDirection.UNREACHABLE, np.inf
+    return NearestAgentDirection.UNREACHABLE_OR_NONE, np.inf
 
 
 def reachable(game_map, pos, agent_position, step=0, limit=4) -> Tuple[bool, int, int]:
