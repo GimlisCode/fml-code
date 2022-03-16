@@ -48,7 +48,7 @@ class GameStateDataset(Dataset):
             _, action, reward = filename.name.replace(".tif", "").split("_")
 
             action = torch.tensor(int(action))
-            reward = torch.tensor(int(reward) / 20)  # rewards between -1 and 1
+            reward = torch.clip(torch.tensor(int(reward) / 10), min=-1, max=1)  # rewards between -1 and 1
 
             self.state_t.append(state_t)
             self.action.append(action)

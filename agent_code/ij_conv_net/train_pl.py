@@ -17,7 +17,7 @@ if __name__ == "__main__":
     train_loader = DataLoader(dataset_train, batch_size=16, shuffle=True)
     val_loader = DataLoader(dataset_val, batch_size=16)
 
-    Q = QNetwork(features_out=6, learning_rate=0.001)
+    Q = QNetwork(features_out=6, learning_rate=0.001, gamma=0.)
 
     callbacks = [
         EarlyStopping(monitor="val_loss", min_delta=0.001, patience=25, mode="min"),
