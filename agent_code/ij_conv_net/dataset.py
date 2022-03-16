@@ -45,6 +45,10 @@ class GameStateDataset(Dataset):
             state_t[:, 0:-1, 0:-1] = img[:9]
             state_t_1[:, 0:-1, 0:-1] = img[9:]
 
+            # instead of just using one pixel to encode the ability to drop a bomb use the whole image
+            # state_t[8, :, :] = state_t[8, 0, 0]
+            # state_t_1[8, :, :] = state_t_1[8, 0, 0]
+
             _, action, reward = filename.name.replace(".tif", "").split("_")
 
             action = torch.tensor(int(action))

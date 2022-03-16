@@ -34,3 +34,4 @@ def plot_tensorboard_loss(version):
 
 if __name__ == '__main__':
     plot_tensorboard_loss(8)
+    plot_tensorboard_loss(9)
