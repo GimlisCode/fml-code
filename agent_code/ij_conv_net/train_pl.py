@@ -9,7 +9,7 @@ from agent_code.ij_conv_net.network import QNetwork
 
 if __name__ == "__main__":
     print("Loading dataset...")
-    all_data = GameStateDataset.from_data_path("../all_train_data_collector/train_data", load=False)
+    all_data = GameStateDataset.from_data_path("../ij_conv_net_train_data_collector/train_data", load=False)
     dataset_train, dataset_val = all_data.split(val_percentage=0.2)
 
     print("Loading finished. Dataset size (train/val):", len(dataset_train), len(dataset_val))

@@ -112,4 +112,4 @@ screenshots/*.webm
 replays/
 results/
 /agent_code/cc_train_data_collector_1/train_data_new/
-/agent_code/all_train_data_collector/train_data/
+/agent_code/ij_conv_net_train_data_collector/train_data/
