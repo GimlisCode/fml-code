@@ -112,3 +112,4 @@ screenshots/*.webm
 replays/
 results/
 *.tif
+/agent_code/ij_conv_net_train_data_collector/train_data/
