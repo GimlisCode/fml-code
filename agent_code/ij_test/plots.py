@@ -12,21 +12,26 @@ def load_agent_performance(path: str):
 
 
 def plot_num_of_negative_rewards(rewards_per_episode: List[List[int]], labels: List[str]):
+    data = list()
+
     for experiment_idx, current_rewards_per_episode in enumerate(rewards_per_episode):
         percentage_of_negative_rewards_per_episode = list()
 
         for episode in current_rewards_per_episode:
             percentage_of_negative_rewards_per_episode.append(np.mean(np.array(episode) < 0))
 
-        plt.boxplot(percentage_of_negative_rewards_per_episode)
+        data.append(percentage_of_negative_rewards_per_episode)
 
+    plt.boxplot(data, labels=labels)
     plt.show()
 
 
 def plot_points(points_per_epoch: List[List[int]], labels: List[str]):
+    data = list()
     for experiment_idx, current_points_per_episode in enumerate(points_per_epoch):
-        plt.boxplot(current_points_per_episode, label=labels[experiment_idx])
+        data.append(current_points_per_episode)
 
+    plt.boxplot(data, labels=labels)
     plt.show()
 
 
@@ -63,13 +68,13 @@ def to_latex_table(
     print(f"\t\\caption{{{caption}}}", file=output_stream)
     print("\t\\begin{tabular}{c|l|l|l}", file=output_stream)
     print(f"\t\t\\label{{{label}}}", file=output_stream)
-    print("\t\t\\textbf{Experiment} & \\textbf{Mean Reward} & \\textbf{Mean Points} & \\textbf{Deaths (\%)} \\\\ ",
+    print("\t\t\\textbf{Experiment} & \\textbf{Median Reward} & \\textbf{Median Points} & \\textbf{Deaths (\%)} \\\\ ",
           file=output_stream)
     print("\t\t\\hline", file=output_stream)
 
     for experiment_idx,  experiment_performance in enumerate(experiment_performances):
-        mean_reward = round(np.mean(list(itertools.chain(*experiment_performance["rewards"]))).item(), 2)
-        mean_points = round(np.mean(experiment_performance["points"]).item(), 2)
+        mean_reward = round(np.median(list(itertools.chain(*experiment_performance["rewards"]))).item(), 2)
+        mean_points = round(np.median(experiment_performance["points"]).item(), 2)
         death_percentage = round(np.mean(experiment_performance["agent_died"]) * 100, 2)
 
         print(f"\t\t{names[experiment_idx]} & {mean_reward} & {mean_points} & {death_percentage} \\\\",
@@ -84,9 +89,9 @@ def to_latex_table(
 
 if __name__ == '__main__':
     experiments = {
-        # "no improvements": "../../ExperimentData/noAugNoPar/performance.json",
-        # "augmentations": "../../ExperimentData/augmentation/performance.json",
-        # "parallel": "../../ExperimentData/parallel(noAug)/performance.json",
+        "no improvements": "../../ExperimentData/noAugNoPar/performance.json",
+        "augmentations": "../../ExperimentData/augmentation/performance.json",
+        "parallel": "../../ExperimentData/parallel(noAug)/performance.json",
         "parallel and augmentation": "../../ExperimentData/parallel+augmentation/performance.json"
     }
 
@@ -97,5 +102,7 @@ if __name__ == '__main__':
 
     plot_num_of_negative_rewards([performance["rewards"] for performance in experiment_performances],
                                  list(experiments.keys()))
+
+    plot_points([performance["points"] for performance in experiment_performances], list(experiments.keys()))
 
     to_latex_table(experiment_performances, list(experiments.keys()), "Test", "tab:experiments_comparison", "test.tex")

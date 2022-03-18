@@ -26,6 +26,9 @@ def get_all_augmentations(state_idx_t, action_idx, state_idx_t1):
     augmented_sas = list()
 
     for augmentation in Augmentation:
+        if augmentation in [Augmentation.ROTATE_270_FLIP_LEFT_RIGHT, Augmentation.ROTATE_90_FLIP_LEFT_RIGHT,
+                            Augmentation.FLIP_LEFT_RIGHT, Augmentation.FLIP_UP_DOWN]:
+            continue
         augmented_sas.append(augment(state_idx_t, action_idx, state_idx_t1, augmentation))
 
     return augmented_sas
@@ -129,10 +132,10 @@ def augment_direction(direction_idx, augmentation_dict):
 def rotate_direction_90_degree(direction_idx):
     # clockwise
     return augment_direction(direction_idx, {
-        1: 2,
-        2: 3,
-        3: 4,
-        4: 1,
+        1: 2,  # Right --> Down
+        2: 3,  # Down --> Left
+        3: 4,  # Left --> Up
+        4: 1,  # Up --> Right
     })
 
 
@@ -146,19 +149,19 @@ def rotate_direction_270_degree(direction_idx):
 
 def flip_direction_left_right(direction_idx):
     return augment_direction(direction_idx, {
-        1: 3,
-        2: 2,
-        3: 1,
-        4: 4,
+        1: 3,  # Right --> Left
+        2: 2,  # Down --> Down
+        3: 1,  # Left --> Right
+        4: 4,  # Up --> Up
     })
 
 
 def flip_direction_up_down(direction_idx):
     return augment_direction(direction_idx, {
-        1: 1,
-        2: 4,
-        3: 3,
-        4: 2,
+        1: 1,  # Right --> Right
+        2: 4,  # Down --> Up
+        3: 3,  # Left --> Left
+        4: 2,  # Up --> Down
     })
 
 
@@ -179,10 +182,10 @@ def augment_action_idx(action_idx, augmentation_dict):
 def rotate_action_90_degree(action_idx):
     # clockwise
     return augment_action_idx(action_idx, {
-        0: 1,
-        1: 2,
-        2: 3,
-        3: 0,
+        0: 1,  # Up --> Right
+        1: 2,  # Right --> Down
+        2: 3,  # Down --> Left
+        3: 0,  # Left --> Up
     })
 
 
@@ -196,19 +199,19 @@ def rotate_action_270_degree(action_idx):
 
 def flip_action_left_right(action_idx):
     return augment_action_idx(action_idx, {
-        0: 0,
-        1: 3,
-        2: 2,
-        3: 1,
+        0: 0,  # Up --> Up
+        1: 3,  # Right --> Left
+        2: 2,  # Down --> Down
+        3: 1,  # Left --> Right
     })
 
 
 def flip_action_up_down(action_idx):
     return augment_action_idx(action_idx, {
-        0: 2,
-        1: 1,
-        2: 0,
-        3: 3,
+        0: 2,  # Up --> Down
+        1: 1,  # Right --> Right
+        2: 0,  # Down --> Up
+        3: 3,  # Left --> Left
     })
 
 
