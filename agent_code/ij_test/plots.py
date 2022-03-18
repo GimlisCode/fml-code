@@ -11,7 +11,7 @@ def load_agent_performance(path: str):
         return json.loads(f.read())
 
 
-def plot_num_of_negative_rewards(rewards_per_episode: List[List[int]], labels: List[str]):
+def plot_num_of_negative_rewards(rewards_per_episode: List[List[int]], labels: List[str], save_to: str = None):
     data = list()
 
     for experiment_idx, current_rewards_per_episode in enumerate(rewards_per_episode):
@@ -23,15 +23,21 @@ def plot_num_of_negative_rewards(rewards_per_episode: List[List[int]], labels: L
         data.append(percentage_of_negative_rewards_per_episode)
 
     plt.boxplot(data, labels=labels)
+    plt.xticks(rotation=5)
+    if save_to is not None:
+        plt.savefig(save_to)
     plt.show()
 
 
-def plot_points(points_per_epoch: List[List[int]], labels: List[str]):
+def plot_points(points_per_epoch: List[List[int]], labels: List[str], save_to: str = None):
     data = list()
     for experiment_idx, current_points_per_episode in enumerate(points_per_epoch):
         data.append(current_points_per_episode)
 
     plt.boxplot(data, labels=labels)
+    plt.xticks(rotation=5)
+    if save_to is not None:
+        plt.savefig(save_to)
     plt.show()
 
 
@@ -101,8 +107,13 @@ if __name__ == '__main__':
         experiment_performances.append(load_agent_performance(experiments[experiment_key]))
 
     plot_num_of_negative_rewards([performance["rewards"] for performance in experiment_performances],
-                                 list(experiments.keys()))
+                                 list(experiments.keys()), save_to="negative_rewards_box_plots.pdf")
 
-    plot_points([performance["points"] for performance in experiment_performances], list(experiments.keys()))
+    plot_points([performance["points"] for performance in experiment_performances], list(experiments.keys()),
+                save_to="points_box_plots.pdf")
 
-    to_latex_table(experiment_performances, list(experiments.keys()), "Test", "tab:experiments_comparison", "test.tex")
+    to_latex_table(experiment_performances,
+                   list(experiments.keys()),
+                   "Comparison of the performance playing against rule based agents.",
+                   "tab:experiments_performance_comparison",
+                   "comparison_test_run.tex")
