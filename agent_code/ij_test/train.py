@@ -9,6 +9,8 @@ from .callbacks import *
 
 def setup_training(self):
     self.rewards_per_epoch = list()
+    self.current_points = list()
+    self.agent_died = list()
 
 
 def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_state: dict, events: List[str]):
@@ -22,11 +24,28 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
 
 
 def end_of_round(self, last_game_state: dict, last_action: str, events: List[str]):
-    self.rewards_per_epoch.append(self.rewards)
+    last_game_map = map_game_state_to_image(last_game_state)
+    last_agent_position = np.array(last_game_state["self"][3])
+    agent_died = e.KILLED_SELF in events or e.GOT_KILLED in events
 
-    if last_game_state["round"] == 10:
-        with open("rewards.json", "w") as f:
-            f.write(json.dumps({"rewards": self.rewards_per_epoch}))
+    if agent_died and last_game_map[last_agent_position[0], last_agent_position[1]] == 0:
+        # THE AGENT DIED AND WAS ON A SAVE FIELD BEFORE HE MOVED
+        action_idx = get_idx_for_action(last_action)
+        if action_idx < 4:  # < 4 means he moved somehow into his death
+            # IF HE ACTIVELY MOVED INTO AN EXPLOSION UPDATE Q WITH A NEGATIVE REWARD
+            self.rewards.append(-5)
+
+    self.rewards_per_epoch.append(self.rewards)
+    self.current_points.append(last_game_state["self"][1])
+    self.agent_died.append(1 if agent_died else 0)
+
+    if last_game_state["round"] % 10 == 0:
+        with open("performance.json", "w") as f:
+            f.write(json.dumps({
+                "rewards": self.rewards_per_epoch,
+                "points": self.current_points,
+                "agent_died": self.agent_died
+            }))
 
 
 def calculate_reward(events, old_game_state, new_game_state) -> int:
@@ -96,21 +115,22 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         reward_sum += 5
     elif current_safe_field_direction != SafeFieldDirection.IS_AT and e.BOMB_DROPPED not in events:
         # AGENT DID NOT MOVE CLOSER TO SAFE FIELD AND IS NOT AT SAFE FIELD
-        reward_sum -= 18    # as the other positive reward can at most sum up to 9 but combined with alpha 0,5 the
+        reward_sum -= 18  # as the other positive reward can at most sum up to 9 but combined with alpha 0,5 the
         # punishment must be greater than 2 * 9 such that it is not less than 9
 
+    agent_moved = not (e.BOMB_DROPPED in events or e.WAITED in events or e.INVALID_ACTION in events)
+
     # --- COINS ---
-    if previous_coin_distance > current_coin_distance and not np.isinf(previous_coin_distance):
+    if previous_coin_distance > current_coin_distance and not np.isinf(previous_coin_distance) and agent_moved:
         # AGENT MOVED CLOSER TO COIN
         reward_sum += 4
 
     # --- CRATES ---
-    if previous_crate_distance > current_crate_distance:
+    if previous_crate_distance > current_crate_distance and agent_moved:
         # AGENT MOVED CLOSER TO CRATE
         reward_sum += 3
 
     # --- OTHER AGENTS ---
-    agent_moved = not (e.BOMB_DROPPED in events or e.WAITED in events or e.INVALID_ACTION in events)
     if previous_other_agent_distance > current_other_agent_distance and agent_moved:
         # AGENT MOVED CLOSER TO THE NEAREST OTHER AGENT
         reward_sum += 2
