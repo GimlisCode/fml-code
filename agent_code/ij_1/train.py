@@ -147,6 +147,11 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
     current_other_agent_direction, current_other_agent_distance = find_next_agent(current_map,
                                                                                   current_agent_position,
                                                                                   current_other_agent_positions)
+    artificial_current_other_agent_direction, artificial_current_other_agent_distance = find_next_agent(
+        previous_map,
+        current_agent_position,
+        previous_other_agent_positions
+    )
 
     # --- BOMB DROP ---
     next_to_crate = previous_crate_direction == CrateDirection.NEXT_TO
@@ -184,8 +189,8 @@ def calculate_reward(events, old_game_state, new_game_state) -> int:
         reward_sum += 3
 
     # --- OTHER AGENTS ---
-    if previous_other_agent_distance > current_other_agent_distance and agent_moved:
-        # AGENT MOVED CLOSER TO THE NEAREST OTHER AGENT
+    if previous_other_agent_distance > artificial_current_other_agent_distance:
+        # AGENT MOVED CLOSER TO THE NEAREST OTHER AGENT (BASED ON HIS ORIGINAL OBSERVATION)
         reward_sum += 2
 
     # --- UNDEFINED BEHAVIOUR STATES ---
