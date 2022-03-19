@@ -74,16 +74,20 @@ def to_latex_table(
     print(f"\t\\caption{{{caption}}}", file=output_stream)
     print("\t\\begin{tabular}{c|l|l|l}", file=output_stream)
     print(f"\t\t\\label{{{label}}}", file=output_stream)
-    print("\t\t\\textbf{Experiment} & \\textbf{Median Reward} & \\textbf{Median Points} & \\textbf{Deaths (\%)} \\\\ ",
+    print("\t\t\\textbf{Experiment} & \\textbf{Median Reward} & \\textbf{Mean Reward} & \\textbf{Median Points} & "
+          "\\textbf{Mean Points} & \\textbf{Deaths (\%)} \\\\ ",
           file=output_stream)
     print("\t\t\\hline", file=output_stream)
 
     for experiment_idx,  experiment_performance in enumerate(experiment_performances):
-        mean_reward = round(np.median(list(itertools.chain(*experiment_performance["rewards"]))).item(), 2)
-        mean_points = round(np.median(experiment_performance["points"]).item(), 2)
+        median_reward = round(np.median(list(itertools.chain(*experiment_performance["rewards"]))).item(), 2)
+        median_points = round(np.median(experiment_performance["points"]).item(), 2)
+        mean_reward = round(np.mean(list(itertools.chain(*experiment_performance["rewards"]))).item(), 2)
+        mean_points = round(np.mean(experiment_performance["points"]).item(), 2)
         death_percentage = round(np.mean(experiment_performance["agent_died"]) * 100, 2)
 
-        print(f"\t\t{names[experiment_idx]} & {mean_reward} & {mean_points} & {death_percentage} \\\\",
+        print(f"\t\t{names[experiment_idx]} & {median_reward} & {mean_reward} & {median_points} & {mean_points} "
+              f"& {death_percentage} \\\\",
               file=output_stream)
 
     print("\t\t\\hline", file=output_stream)
@@ -98,7 +102,9 @@ if __name__ == '__main__':
         "no improvements": "../../ExperimentData/noAugNoPar/performance.json",
         "augmentations": "../../ExperimentData/augmentation/performance.json",
         "parallel": "../../ExperimentData/parallel(noAug)/performance.json",
-        "parallel and augmentation": "../../ExperimentData/parallel+augmentation/performance.json"
+        "parallel and augmentation": "../../ExperimentData/parallel+augmentation/performance.json",
+        "test": "./performance.json",
+        "test only flipping": "./performance_only_flipping.json"
     }
 
     experiment_performances = list()
