@@ -77,14 +77,14 @@ def plot_model_2d_difference(
         if path is not None:
             path = Path(path)
             save_to = path.joinpath(save_to)
-        fig.savefig(save_to)
+        fig.savefig(save_to, bbox_inches="tight")
 
     plt.show()
 
 
 if __name__ == '__main__':
     difference = True
-    path = "../../ExperimentData/noAugNoPar/6"
+    path = "cd_3Snapshots/snapshots"
 
     models = dict()
     snapshots = [100, 250, 500, 1000, 1500]
@@ -95,6 +95,6 @@ if __name__ == '__main__':
 
     if difference:
         models[0] = np.zeros_like(list(models.keys())[-1])
-        plot_model_2d_difference(models, "Learning history for a big model", path, save_to="big_model_learning.pdf")
+        plot_model_2d_difference(models, "Learning history for a big model", path, save_to="small_model_learning.pdf")
     else:
         plot_model_2d(models, "Learning history for a big model", path, save_to="improved_model_learning.pdf")
