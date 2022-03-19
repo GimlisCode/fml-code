@@ -90,17 +90,26 @@ def setup(self):
     if np.sum(self.Q) != 0:
         print(f"Loaded: {pathlib.Path(__file__).parent.name}")
 
+    if self.train:
+        self.use_action_counter = True
+        self.action_counter = dict()
+
 
 def act(self, game_state: dict) -> str:
     current_round = game_state["round"]
 
+    state_idx = get_idx_for_state(game_state)
+
     random_prob = max(.5**(1 + current_round / 50), 0.1)
     if self.train and random.random() < random_prob:
+        if self.use_action_counter and tuple(state_idx) in self.action_counter:
+            return ACTIONS[np.argmin([self.action_counter[tuple(state_idx)][i] for i in range(6)])]
+
         self.logger.debug("Choosing action purely at random.")
         return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
 
     self.logger.debug("Querying model for action.")
-    return ACTIONS[np.argmax(self.Q[get_idx_for_state(game_state)])]
+    return ACTIONS[np.argmax(self.Q[state_idx])]
 
 
 def get_steps_between(agent_position, object_positions) -> np.ndarray:

@@ -57,6 +57,19 @@ def game_events_occurred(self, old_game_state: dict, self_action: str, new_game_
     idx_t1 = get_idx_for_state(new_game_state)
     action_idx_t = get_idx_for_action(self_action)
 
+    if self.use_action_counter:
+        if tuple(idx_t) not in self.action_counter:
+            self.action_counter[tuple(idx_t)] = {
+                0: 0,
+                1: 0,
+                2: 0,
+                3: 0,
+                4: 0,
+                5: 0,
+            }
+
+        self.action_counter[tuple(idx_t)][action_idx_t] += 1
+
     if self.train_data_collector is not None:
         self.train_data_collector.add(idx_t, action_idx_t, reward, idx_t1)
 
