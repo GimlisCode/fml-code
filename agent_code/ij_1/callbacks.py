@@ -103,7 +103,7 @@ def act(self, game_state: dict) -> str:
     random_prob = max(.5**(1 + current_round / 50), 0.1)
     if self.train and random.random() < random_prob:
         if self.use_action_counter and tuple(state_idx) in self.action_counter:
-            return ACTIONS[np.argmin([self.action_counter[tuple(state_idx)][i] for i in range(6)])]
+            return ACTIONS[np.argmin(self.action_counter[tuple(state_idx)])]
 
         self.logger.debug("Choosing action purely at random.")
         return np.random.choice(ACTIONS, p=[.2, .2, .2, .2, .1, .1])
