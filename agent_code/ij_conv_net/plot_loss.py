@@ -30,7 +30,7 @@ def plot_tensorboard_loss(version):
 
     plt.xticks(x_ticks_idx, x_ticks_labels)
     plt.legend()
-    plt.savefig("train_loss_conv_net.pdf")
+    plt.savefig("train_loss_conv_net.pdf", bbox_inches="tight")
     plt.show()
 
 
