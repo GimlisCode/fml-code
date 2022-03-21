@@ -43,7 +43,7 @@ def end_of_round(self, last_game_state: dict, last_action: str, events: List[str
     self.agent_died.append(1 if agent_died else 0)
 
     if last_game_state["round"] % 10 == 0:
-        with open("performance.json", "w") as f:
+        with open(f"performance_{self.experiment_number}.json", "w") as f:
             f.write(json.dumps({
                 "rewards": self.rewards_per_epoch,
                 "points": self.current_points,

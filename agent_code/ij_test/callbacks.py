@@ -53,7 +53,9 @@ class NearestAgentDirection:
 
 
 def setup(self):
-    with open("model.pt", "rb") as file:
+    self.experiment_number = 0
+
+    with open(f"model{self.experiment_number}.pt", "rb") as file:
         self.Q = pickle.load(file)
 
 
