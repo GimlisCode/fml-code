@@ -1,14 +1,30 @@
-import json
-from typing import List, Dict, Any
 import itertools
+import json
+from typing import List, Dict, Any, Union
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
-def load_agent_performance(path: str):
-    with open(path, "r") as f:
-        return json.loads(f.read())
+def load_agent_performance(path: Union[str, List[str]]):
+    def _load_agent_performance(file: str) -> Dict[str, Any]:
+        with open(file, "r") as f:
+            return json.loads(f.read())
+
+    if isinstance(path, str):
+        return _load_agent_performance(path)
+    elif isinstance(path, list):
+        performance = _load_agent_performance(path.pop(0))
+
+        for file_path in path:
+            next_performance = _load_agent_performance(file_path)
+
+            for key in performance.keys():
+                performance[key] += next_performance[key]
+
+        return performance
+    else:
+        raise NotImplementedError(f"load_agent_performance not implemented for values of type {type(path)}")
 
 
 def plot_num_of_negative_rewards(rewards_per_episode: List[List[int]], labels: List[str], save_to: str = None):
@@ -79,7 +95,7 @@ def to_latex_table(
     output_stream.close()
 
 
-if __name__ == '__main__':
+def plot_method_performances():
     experiments = {
         "no improvements": "../../ExperimentData/noImprovements/performance.json",
         "AC": "../../ExperimentData/Ac(NoArgNoPar)/performance.json",
@@ -107,3 +123,45 @@ if __name__ == '__main__':
                    "Comparison of the performance playing against rule based agents.",
                    "tab:experiments_performance_comparison",
                    "comparison_test_run.tex")
+
+
+def plot_environment_performances():
+    experiments = {
+        "IJ": [
+            "../../ExperimentData/environments/justIJ/performance_500_1.json",
+            "../../ExperimentData/environments/justIJ/performance_500_2.json",
+            "../../ExperimentData/environments/justIJ/performance_500_3.json",
+        ],
+        "trainedSingle": [
+            "../../ExperimentData/environments/eachTrainedSingle/performance_0.json",
+            "../../ExperimentData/environments/eachTrainedSingle/performance_1.json",
+            "../../ExperimentData/environments/eachTrainedSingle/performance_2.json",
+        ],
+        "trainedAbove": [
+            "../../ExperimentData/environments/trainedAbove/performance_0.json",
+            "../../ExperimentData/environments/trainedAbove/performance_1.json",
+            "../../ExperimentData/environments/trainedAbove/performance_2.json",
+        ],
+    }
+
+    experiment_performances = list()
+
+    for experiment_key in experiments:
+        experiment_performances.append(load_agent_performance(experiments[experiment_key]))
+
+    plot_num_of_negative_rewards([performance["rewards"] for performance in experiment_performances],
+                                 list(experiments.keys()), save_to="negative_rewards_box_plots_environments.pdf")
+
+    plot_points([performance["points"] for performance in experiment_performances], list(experiments.keys()),
+                save_to="points_box_plots_environments.pdf")
+
+    to_latex_table(experiment_performances,
+                   list(experiments.keys()),
+                   "Comparison of the performance of the model trained on different environments "
+                   "playing against rule based agents.",
+                   "tab:experiments_performance_comparison_environments",
+                   "comparison_test_run_environments.tex")
+
+
+if __name__ == '__main__':
+    plot_environment_performances()
