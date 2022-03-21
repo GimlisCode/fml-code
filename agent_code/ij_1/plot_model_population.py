@@ -58,7 +58,7 @@ def plot_model_population(
     plt.show()
 
 
-if __name__ == '__main__':
+def plot_train_method_populations():
     xs = list()
     ys = list()
 
@@ -81,3 +81,28 @@ if __name__ == '__main__':
 
     plot_model_population(xs, ys, list(experiments.keys()), relative=True,
                           save_to="model_population_different_methods.pdf")
+
+
+def plot_different_environment_model_populations():
+    xs = list()
+    ys = list()
+
+    experiments = {
+        "base": "../../ExperimentData/environments/JustCD/combined_snapshots",
+        "trained above": "../../ExperimentData/environments/trainedAbove/combined_snapshots",
+        "trained single": "../../ExperimentData/environments/eachTrainedSingle/combined_snapshots",
+    }
+
+    for experiment_key in experiments:
+        x, y = load_data(experiments[experiment_key], relative=True)
+
+        xs.append(x)
+        ys.append(y)
+
+    plot_model_population(xs, ys, list(experiments.keys()), relative=True,
+                          save_to="model_population_different_environments.pdf")
+
+
+if __name__ == '__main__':
+    plot_train_method_populations()
+    plot_different_environment_model_populations()
