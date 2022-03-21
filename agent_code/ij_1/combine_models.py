@@ -34,8 +34,14 @@ def combine_parallel_snapshots(snapshot_folder: str, output_path: str):
 
 
 if __name__ == '__main__':
-    combine_parallel_snapshots("../../ExperimentData/parallel(noAug)/snapshots",
-                               "../../ExperimentData/parallel(noAug)/combined_snapshots")
+    combine_parallel_snapshots("../../ExperimentData/par(NoArgNoAc)/snapshots",
+                               "../../ExperimentData/par(NoArgNoAc)/combined_snapshots")
 
-    combine_parallel_snapshots("../../ExperimentData/parallel+augmentation/snapshots",
-                               "../../ExperimentData/parallel+augmentation/combined_snapshots")
+    combine_parallel_snapshots("../../ExperimentData/parAc(NoArg)/snapshots",
+                               "../../ExperimentData/parAc(NoArg)/combined_snapshots")
+
+    combine_parallel_snapshots("../../ExperimentData/parArg(NoAc)/snapshots",
+                               "../../ExperimentData/parArg(NoAc)/combined_snapshots")
+
+    combine_parallel_snapshots("../../ExperimentData/parArgAc/snapshots",
+                               "../../ExperimentData/parArgAc/combined_snapshots")

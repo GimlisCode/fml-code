@@ -99,12 +99,14 @@ def to_latex_table(
 
 if __name__ == '__main__':
     experiments = {
-        "no improvements": "../../ExperimentData/noAugNoPar/performance.json",
-        "augmentations": "../../ExperimentData/augmentation/performance.json",
-        "parallel": "../../ExperimentData/parallel(noAug)/performance.json",
-        "parallel and augmentation": "../../ExperimentData/parallel+augmentation/performance.json",
-        "test": "./performance.json",
-        "test only flipping": "./performance_only_flipping.json"
+        "no improvements": "../../ExperimentData/noImprovements/performance.json",
+        "action counting": "../../ExperimentData/Ac(NoArgNoPar)/performance.json",
+        "augmentation": "../../ExperimentData/arg(noParNoAc)/performance.json",
+        "augmentation & action counting": "../../ExperimentData/argAc(noPar)/performance.json",
+        "parallel": "../../ExperimentData/par(NoArgNoAc)/performance.json",
+        "parallel & action counting": "../../ExperimentData/parAc(NoArg)/performance.json",
+        "parallel & augmentations": "../../ExperimentData/parArg(NoAc)/performance.json",
+        "all": "../../ExperimentData/parArgAc/performance.json",
     }
 
     experiment_performances = list()

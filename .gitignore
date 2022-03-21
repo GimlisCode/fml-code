@@ -117,3 +117,7 @@ results/
 /ExperimentData/noImprovements/
 /ExperimentData/par(NoArgNoAc)/
 /ExperimentData/parAc(NoArg)/
+/ExperimentData/arg(noParNoAc)/
+/ExperimentData/argAc(noPar)/
+/ExperimentData/parArg(NoAc)/
+/ExperimentData/parArgAc/

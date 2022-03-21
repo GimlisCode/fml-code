@@ -63,10 +63,14 @@ if __name__ == '__main__':
     ys = list()
 
     experiments = {
-        "no improvements": "../../ExperimentData/noAugNoPar/6",
-        "augmentations": "../../ExperimentData/augmentation/12",
-        "parallel": "../../ExperimentData/parallel(noAug)/combined_snapshots",
-        "parallel and augmentation": "../../ExperimentData/parallel+augmentation/combined_snapshots"
+        "no improvements": "../../ExperimentData/noImprovements/18",
+        "action counting": "../../ExperimentData/Ac(NoArgNoPar)/3",
+        "augmentation": "../../ExperimentData/arg(noParNoAc)/18",
+        "augmentation & action counting": "../../ExperimentData/argAc(noPar)/4",
+        "parallel": "../../ExperimentData/par(NoArgNoAc)/combined_snapshots",
+        "parallel & action counting": "../../ExperimentData/parAc(NoArg)/combined_snapshots",
+        "parallel & augmentations": "../../ExperimentData/parArg(NoAc)/combined_snapshots",
+        "all": "../../ExperimentData/parArgAc/combined_snapshots",
     }
 
     for experiment_key in experiments:
