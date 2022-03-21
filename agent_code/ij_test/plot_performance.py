@@ -71,11 +71,14 @@ def to_latex_table(
     print("\\begin{table}", file=output_stream)
     print("\t\\centering", file=output_stream)
     print(f"\t\\caption{{{caption}}}", file=output_stream)
-    print("\t\\begin{tabular}{c|l|l|l|l|l}", file=output_stream)
+    print("\t\\begin{tabular}{c|c|c|c|c|c}", file=output_stream)
     print(f"\t\t\\label{{{label}}}", file=output_stream)
-    print("\t\t\\textbf{Experiment} & \\textbf{Median Reward} & \\textbf{Mean Reward} & \\textbf{Median Points} & "
-          "\\textbf{Mean Points} & \\textbf{Deaths (\%)} \\\\ ",
+    print("\t\t\\multirow{2}*{\\textbf{Experiment}} & \\multicolumn{2}{c|}{\\textbf{Rewards}} & "
+          "\\multicolumn{2}{c|}{\\textbf{Points}} & \\multirow{2}*{\\textbf{Deaths (\%)}} \\\\ ",
           file=output_stream)
+
+    print("& \\textbf{Median} & \\textbf{Mean} & \\textbf{Median} & \\textbf{Mean} & \\\\", file=output_stream)
+
     print("\t\t\\hline", file=output_stream)
 
     for experiment_idx,  experiment_performance in enumerate(experiment_performances):
