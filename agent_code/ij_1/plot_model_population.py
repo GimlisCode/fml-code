@@ -64,12 +64,12 @@ if __name__ == '__main__':
 
     experiments = {
         "no improvements": "../../ExperimentData/noImprovements/18",
-        "action counting": "../../ExperimentData/Ac(NoArgNoPar)/3",
-        "augmentation": "../../ExperimentData/arg(noParNoAc)/18",
-        "augmentation & action counting": "../../ExperimentData/argAc(noPar)/4",
-        "parallel": "../../ExperimentData/par(NoArgNoAc)/combined_snapshots",
-        "parallel & action counting": "../../ExperimentData/parAc(NoArg)/combined_snapshots",
-        "parallel & augmentations": "../../ExperimentData/parArg(NoAc)/combined_snapshots",
+        "AC": "../../ExperimentData/Ac(NoArgNoPar)/3",
+        "AUG": "../../ExperimentData/arg(noParNoAc)/18",
+        "AUG & AC": "../../ExperimentData/argAc(noPar)/4",
+        "PAR": "../../ExperimentData/par(NoArgNoAc)/combined_snapshots",
+        "PAR & AC": "../../ExperimentData/parAc(NoArg)/combined_snapshots",
+        "PAR & AUG": "../../ExperimentData/parArg(NoAc)/combined_snapshots",
         "all": "../../ExperimentData/parArgAc/combined_snapshots",
     }
 

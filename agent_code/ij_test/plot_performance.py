@@ -50,29 +50,10 @@ def to_latex_table(
 ):
     output_stream = open(out_file, "w")
 
-    """
-    \begin{table}
-        \centering
-        \caption{Comparison of different agent implementations. The points were measured during playing the \ac{ch} scenario and the classic Bomberman scenario versus one coin\_collector enemy and averaged over five rounds. To avoid. In order to avoid long numbers, these have been rounded off. Just the latest versions of the different implementations are considered. Deep Reinforcement Learning implementations are not considered in this overview. Points \ac{ch}: Amount of collected coins (our agent:enemy agent); Points classic: amount of points (our agent:enemy agent); \# training episodes: number of episodes till the model is fully trained for both scenarios. }
-        \begin{tabular}{c|l|l|l}
-            \label{tab:OverviewTraining}
-            \textbf{Implementation} & \textbf{Points CH} & \textbf{Points classic} & \textbf{\# training episodes} \\ 
-            \hline
-            Coin-Collector 1 & 25:25 & - & ca. 1100 \\ 
-            Coin-Collector 2 & 25:25 & - & ca. 200 \\
-            Crate-Destroyer 1 & 25:25 & 5:4 & ca. 1500 \\
-            Crate-Destroyer 2 & 25:25 & 5:4 & ca. 2200 \\
-            Crate-Destroyer 3 & 25:25 & 5:4 & ca. 2200 \\
-            Indiana-Jones 1 & 25:25 & 7:4 & ca. 10$\times$2000 \\
-            \hline
-        \end{tabular}
-    \end{table}
-    """
-
     print("\\begin{table}", file=output_stream)
     print("\t\\centering", file=output_stream)
     print(f"\t\\caption{{{caption}}}", file=output_stream)
-    print("\t\\begin{tabular}{c|l|l|l}", file=output_stream)
+    print("\t\\begin{tabular}{c|l|l|l|l|l}", file=output_stream)
     print(f"\t\t\\label{{{label}}}", file=output_stream)
     print("\t\t\\textbf{Experiment} & \\textbf{Median Reward} & \\textbf{Mean Reward} & \\textbf{Median Points} & "
           "\\textbf{Mean Points} & \\textbf{Deaths (\%)} \\\\ ",
@@ -86,7 +67,8 @@ def to_latex_table(
         mean_points = round(np.mean(experiment_performance["points"]).item(), 2)
         death_percentage = round(np.mean(experiment_performance["agent_died"]) * 100, 2)
 
-        print(f"\t\t{names[experiment_idx]} & {median_reward} & {mean_reward} & {median_points} & {mean_points} "
+        current_name = names[experiment_idx].replace("&", "\\&")
+        print(f"\t\t{current_name} & {median_reward} & {mean_reward} & {median_points} & {mean_points} "
               f"& {death_percentage} \\\\",
               file=output_stream)
 
@@ -100,12 +82,12 @@ def to_latex_table(
 if __name__ == '__main__':
     experiments = {
         "no improvements": "../../ExperimentData/noImprovements/performance.json",
-        "action counting": "../../ExperimentData/Ac(NoArgNoPar)/performance.json",
-        "augmentation": "../../ExperimentData/arg(noParNoAc)/performance.json",
-        "augmentation & action counting": "../../ExperimentData/argAc(noPar)/performance.json",
-        "parallel": "../../ExperimentData/par(NoArgNoAc)/performance.json",
-        "parallel & action counting": "../../ExperimentData/parAc(NoArg)/performance.json",
-        "parallel & augmentations": "../../ExperimentData/parArg(NoAc)/performance.json",
+        "AC": "../../ExperimentData/Ac(NoArgNoPar)/performance.json",
+        "AUG": "../../ExperimentData/arg(noParNoAc)/performance.json",
+        "AUG & AC": "../../ExperimentData/argAc(noPar)/performance.json",
+        "PAR": "../../ExperimentData/par(NoArgNoAc)/performance.json",
+        "PAR & AC": "../../ExperimentData/parAc(NoArg)/performance.json",
+        "PAR & AUG": "../../ExperimentData/parArg(NoAc)/performance.json",
         "all": "../../ExperimentData/parArgAc/performance.json",
     }
 
