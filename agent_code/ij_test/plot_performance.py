@@ -12,8 +12,10 @@ def load_agent_performance(path: Union[str, List[str]]):
             return json.loads(f.read())
 
     if isinstance(path, str):
+        # load single performance file
         return _load_agent_performance(path)
     elif isinstance(path, list):
+        # load multiple given performance files (from parallel test runs)
         performance = _load_agent_performance(path.pop(0))
 
         for file_path in path:
@@ -39,9 +41,9 @@ def plot_num_of_negative_rewards(rewards_per_episode: List[List[int]], labels: L
         data.append(percentage_of_negative_rewards_per_episode)
 
     plt.boxplot(data, labels=labels)
-    plt.xticks(rotation=5)
+    plt.xticks(rotation=12)
     if save_to is not None:
-        plt.savefig(save_to)
+        plt.savefig(save_to, bbox_inches="tight")
     plt.show()
 
 
@@ -51,9 +53,9 @@ def plot_points(points_per_epoch: List[List[int]], labels: List[str], save_to: s
         data.append(current_points_per_episode)
 
     plt.boxplot(data, labels=labels)
-    plt.xticks(rotation=5)
+    plt.xticks(rotation=12)
     if save_to is not None:
-        plt.savefig(save_to)
+        plt.savefig(save_to, bbox_inches="tight")
     plt.show()
 
 
@@ -97,7 +99,7 @@ def to_latex_table(
 
 def plot_method_performances():
     experiments = {
-        "no improvements": "../../ExperimentData/noImprovements/performance.json",
+        "base": "../../ExperimentData/noImprovements/performance.json",
         "AC": "../../ExperimentData/Ac(NoArgNoPar)/performance.json",
         "AUG": "../../ExperimentData/arg(noParNoAc)/performance.json",
         "AUG & AC": "../../ExperimentData/argAc(noPar)/performance.json",
@@ -127,17 +129,17 @@ def plot_method_performances():
 
 def plot_environment_performances():
     experiments = {
-        "IJ": [
-            "../../ExperimentData/environments/justIJ/performance_500_1.json",
-            "../../ExperimentData/environments/justIJ/performance_500_2.json",
-            "../../ExperimentData/environments/justIJ/performance_500_3.json",
+        "only classic": [
+            "../../ExperimentData/environments/justCD/performance_500_1.json",
+            "../../ExperimentData/environments/justCD/performance_500_2.json",
+            "../../ExperimentData/environments/justCD/performance_500_3.json",
         ],
-        "trainedSingle": [
+        "trained single": [
             "../../ExperimentData/environments/eachTrainedSingle/performance_0.json",
             "../../ExperimentData/environments/eachTrainedSingle/performance_1.json",
             "../../ExperimentData/environments/eachTrainedSingle/performance_2.json",
         ],
-        "trainedAbove": [
+        "trained above": [
             "../../ExperimentData/environments/trainedAbove/performance_0.json",
             "../../ExperimentData/environments/trainedAbove/performance_1.json",
             "../../ExperimentData/environments/trainedAbove/performance_2.json",
@@ -164,4 +166,5 @@ def plot_environment_performances():
 
 
 if __name__ == '__main__':
+    plot_method_performances()
     plot_environment_performances()
