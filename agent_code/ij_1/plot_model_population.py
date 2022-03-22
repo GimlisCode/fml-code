@@ -53,7 +53,7 @@ def plot_model_population(
     plt.legend()
 
     if save_to is not None:
-        plt.savefig(save_to)
+        plt.savefig(save_to, bbox_inches="tight")
 
     plt.show()
 
@@ -88,7 +88,7 @@ def plot_different_environment_model_populations():
     ys = list()
 
     experiments = {
-        "base": "../../ExperimentData/environments/JustCD/combined_snapshots",
+        "baseline": "../../ExperimentData/environments/JustCD/combined_snapshots",
         "trained above": "../../ExperimentData/environments/trainedAbove/combined_snapshots",
         "trained single": "../../ExperimentData/environments/eachTrainedSingle/combined_snapshots",
     }
@@ -99,7 +99,8 @@ def plot_different_environment_model_populations():
         xs.append(x)
         ys.append(y)
 
-    plot_model_population(xs, ys, list(experiments.keys()), relative=True,
+    plt.figure(figsize=(10, 4))
+    plot_model_population(xs, ys, list(experiments.keys()), relative=True, max_lim=False,
                           save_to="model_population_different_environments.pdf")
 
 
