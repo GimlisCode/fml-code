@@ -32,7 +32,7 @@ def setup_training(self):
         self.snapshot_idx = self.snap_shot_every_k_steps
     elif self.save_snapshots:
         snapshot_numbers = [int(f.name.replace(".pt", "").split("_")[1]) for f in self.snapshot_folder.glob("*.pt")]
-        self.snapshot_idx = max(snapshot_numbers) if len(snapshot_numbers) > 0 else 0 + self.snap_shot_every_k_steps
+        self.snapshot_idx = (max(snapshot_numbers) if len(snapshot_numbers) > 0 else 0) + self.snap_shot_every_k_steps
     else:
         self.snapshot_idx = self.snap_shot_every_k_steps
 
