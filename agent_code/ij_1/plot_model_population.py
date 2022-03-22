@@ -63,14 +63,14 @@ def plot_train_method_populations():
     ys = list()
 
     experiments = {
-        "no improvements": "../../ExperimentData/noImprovements/18",
-        "AC": "../../ExperimentData/Ac(NoArgNoPar)/3",
-        "AUG": "../../ExperimentData/arg(noParNoAc)/18",
-        "AUG & AC": "../../ExperimentData/argAc(noPar)/4",
-        "PAR": "../../ExperimentData/par(NoArgNoAc)/combined_snapshots",
-        "PAR & AC": "../../ExperimentData/parAc(NoArg)/combined_snapshots",
-        "PAR & AUG": "../../ExperimentData/parArg(NoAc)/combined_snapshots",
-        "all": "../../ExperimentData/parArgAc/combined_snapshots",
+        "no improvements": "../../ExperimentData/Methods/noImprovements/6",
+        "AC": "../../ExperimentData/Methods/ac(NoAugNoPar)/3",
+        "AUG": "../../ExperimentData/Methods/aug(NoAcNoPar)/2",
+        "AUG & AC": "../../ExperimentData/Methods/acAug(noPar)/5",
+        "PAR": "../../ExperimentData/Methods/parallel(noAugNoAc)/combined_snapshots",
+        "PAR & AC": "../../ExperimentData/Methods/parAc(NoAug)/combined_snapshots",
+        "PAR & AUG": "../../ExperimentData/Methods/parAug(NoAc)/combined_snapshots",
+        "all": "../../ExperimentData/Methods/parAcAug/combined_snapshots",
     }
 
     for experiment_key in experiments:

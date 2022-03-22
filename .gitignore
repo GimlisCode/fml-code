@@ -113,11 +113,5 @@ replays/
 results/
 *.tif
 /agent_code/ij_conv_net_train_data_collector/train_data/
-/ExperimentData/Ac(NoArgNoPar)/
-/ExperimentData/noImprovements/
-/ExperimentData/par(NoArgNoAc)/
-/ExperimentData/parAc(NoArg)/
-/ExperimentData/arg(noParNoAc)/
-/ExperimentData/argAc(noPar)/
-/ExperimentData/parArg(NoAc)/
-/ExperimentData/parArgAc/
+/ExperimentData/environments/
+/ExperimentData/Methods/

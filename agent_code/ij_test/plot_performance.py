@@ -102,14 +102,46 @@ def to_latex_table(
 
 def plot_method_performances():
     experiments = {
-        "base": "../../ExperimentData/noImprovements/performance.json",
-        "AC": "../../ExperimentData/Ac(NoArgNoPar)/performance.json",
-        "AUG": "../../ExperimentData/arg(noParNoAc)/performance.json",
-        "AUG & AC": "../../ExperimentData/argAc(noPar)/performance.json",
-        "PAR": "../../ExperimentData/par(NoArgNoAc)/performance.json",
-        "PAR & AC": "../../ExperimentData/parAc(NoArg)/performance.json",
-        "PAR & AUG": "../../ExperimentData/parArg(NoAc)/performance.json",
-        "all": "../../ExperimentData/parArgAc/performance.json",
+        "base": [
+            "../../ExperimentData/Methods/noImprovements/performance_0.json",
+            "../../ExperimentData/Methods/noImprovements/performance_1.json",
+            "../../ExperimentData/Methods/noImprovements/performance_2.json",
+        ],
+        "AC": [
+            "../../ExperimentData/Methods/ac(NoAugNoPar)/performance_0.json",
+            "../../ExperimentData/Methods/ac(NoAugNoPar)/performance_1.json",
+            "../../ExperimentData/Methods/ac(NoAugNoPar)/performance_2.json",
+        ],
+        "AUG": [
+            "../../ExperimentData/Methods/aug(NoAcNoPar)/performance_0.json",
+            "../../ExperimentData/Methods/aug(NoAcNoPar)/performance_1.json",
+            "../../ExperimentData/Methods/aug(NoAcNoPar)/performance_2.json",
+        ],
+        "AUG & AC": [
+            "../../ExperimentData/Methods/acAug(noPar)/performance_0.json",
+            "../../ExperimentData/Methods/acAug(noPar)/performance_1.json",
+            "../../ExperimentData/Methods/acAug(noPar)/performance_2.json",
+        ],
+        "PAR": [
+            "../../ExperimentData/Methods/parallel(noAugNoAc)/performance_0.json",
+            "../../ExperimentData/Methods/parallel(noAugNoAc)/performance_1.json",
+            "../../ExperimentData/Methods/parallel(noAugNoAc)/performance_2.json",
+        ],
+        "PAR & AC": [
+            "../../ExperimentData/Methods/parAc(NoAug)/performance_0.json",
+            "../../ExperimentData/Methods/parAc(NoAug)/performance_1.json",
+            "../../ExperimentData/Methods/parAc(NoAug)/performance_2.json",
+        ],
+        "PAR & AUG": [
+            "../../ExperimentData/Methods/parAug(NoAc)/performance_0.json",
+            "../../ExperimentData/Methods/parAug(NoAc)/performance_1.json",
+            "../../ExperimentData/Methods/parAug(NoAc)/performance_2.json",
+        ],
+        "all": [
+            "../../ExperimentData/Methods/parAcAug/performance_0.json",
+            "../../ExperimentData/Methods/parAcAug/performance_1.json",
+            "../../ExperimentData/Methods/parAcAug/performance_2.json",
+        ]
     }
 
     experiment_performances = list()

@@ -61,17 +61,17 @@ def repeat_last_snapshot(folder: Path, max_number: int):
 
 
 if __name__ == '__main__':
-    combine_parallel_snapshots("../../ExperimentData/par(NoArgNoAc)/snapshots",
-                               "../../ExperimentData/par(NoArgNoAc)/combined_snapshots")
+    combine_parallel_snapshots("../../ExperimentData/Methods/parallel(noAugNoAc)/snapshots",
+                               "../../ExperimentData/Methods/parallel(noAugNoAc)/combined_snapshots")
 
-    combine_parallel_snapshots("../../ExperimentData/parAc(NoArg)/snapshots",
-                               "../../ExperimentData/parAc(NoArg)/combined_snapshots")
+    combine_parallel_snapshots("../../ExperimentData/Methods/parAc(NoAug)/snapshots",
+                               "../../ExperimentData/Methods/parAc(NoAug)/combined_snapshots")
 
-    combine_parallel_snapshots("../../ExperimentData/parArg(NoAc)/snapshots",
-                               "../../ExperimentData/parArg(NoAc)/combined_snapshots")
+    combine_parallel_snapshots("../../ExperimentData/Methods/parAug(NoAc)/snapshots",
+                               "../../ExperimentData/Methods/parAug(NoAc)/combined_snapshots")
 
-    combine_parallel_snapshots("../../ExperimentData/parArgAc/snapshots",
-                               "../../ExperimentData/parArgAc/combined_snapshots")
+    combine_parallel_snapshots("../../ExperimentData/Methods/parAcAug/snapshots",
+                               "../../ExperimentData/Methods/parAcAug/combined_snapshots")
 
     combine_parallel_snapshots("../../ExperimentData/environments/trainedAbove/snapshots",
                                "../../ExperimentData/environments/trainedAbove/combined_snapshots")
