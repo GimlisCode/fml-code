@@ -29,6 +29,8 @@ def plot_tensorboard_loss(version):
         last_step = epoch[i].step
 
     plt.xticks(x_ticks_idx, x_ticks_labels)
+    plt.xlabel("epochs")
+    plt.ylabel("loss")
     plt.legend()
     plt.savefig("train_loss_conv_net.pdf", bbox_inches="tight")
     plt.show()
